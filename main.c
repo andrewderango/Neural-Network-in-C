@@ -23,13 +23,6 @@ double sigmoid(double x)
     return 1.0 / (1.0 + exp(-x));
 }
 
-// double random_double(double min, double max)
-// {   
-//     // Seed the random number generator with the current time
-//     srand(time(NULL));
-//     double scale = rand() / (double)RAND_MAX; // [0, 1.0]
-//     return min + scale * (max - min);         // [min, max]
-// }
 double random_double(double min, double max)
 {
     unsigned char buffer[sizeof(uint64_t)]; // Buffer to hold random bytes
