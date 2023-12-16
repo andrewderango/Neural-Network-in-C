@@ -4,6 +4,7 @@
 #include <time.h>
 #include <string.h>
 #include <sodium.h> // For randombytes_buf function
+#include "mymodel.h"
 
 #define num_inputs 2          // N1 = 2
 #define num_neurons_layer2 40 // N2 = 40
@@ -17,11 +18,6 @@
 #define MAX_ROWS 48120
 #define MAX_COLS 4
 #define train_split 0.003 // 0.3 percent of data will be used for train
-
-double sigmoid(double x)
-{
-    return 1.0 / (1.0 + exp(-x));
-}
 
 double random_double(double min, double max)
 {

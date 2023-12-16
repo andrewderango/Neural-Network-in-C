@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -O3
 LDFLAGS = -lm -lsodium
-TARGET = main
+TARGET = ANN
 SRC = main.c mymodel.c
 OBJ = $(SRC:.c=.o)
 
