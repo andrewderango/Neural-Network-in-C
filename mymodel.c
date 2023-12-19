@@ -6,20 +6,18 @@
 #include <sodium.h>
 #include "mymodel.h"
 
-double sigmoid(double x)
-{
+double sigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
 }
 
-double random_double(double min, double max)
-{
+double random_double(double min, double max) {
     unsigned char buffer[sizeof(uint64_t)]; // Buffer to hold random bytes
     uint64_t random_value;
 
     // Initialize the sodium library
     if (sodium_init() < 0) {
-        // Initialization failed
-        // Handle the error here (e.g., print an error message and exit)
+        printf("Error initializing the sodium library.\n");
+        exit(1);
     }
 
     // Generate random bytes
@@ -59,7 +57,7 @@ void ReadFile(int MAX_ROWS, int MAX_COLS, double data[MAX_ROWS][MAX_COLS], char*
         // Break the loop if the array is full to prevent overflow
         if (row >= MAX_ROWS)
         {
-            printf("End of the file.\n");
+            printf("\nSuccessfully read the input file: %s\n\n", filename);
             break;
         }
     }
@@ -68,386 +66,251 @@ void ReadFile(int MAX_ROWS, int MAX_COLS, double data[MAX_ROWS][MAX_COLS], char*
     fclose(file);
 }
 
-void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_neurons_layer2, int num_neurons_layer3, 
+void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                 double X_train[][num_inputs], double Y_train[][num_outputs],
-                double W2[][num_inputs], double W3[][num_neurons_layer2], double W4[][num_neurons_layer3],
-                double b2[][1], double b3[][1], double b4[][1],
-                double a2[][num_train], double a3[][num_train], double a4[][num_train])
+                double ***W, double **b, double ***a)
 {
+    for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
 
-    for (int i = 0; i < num_neurons_layer2; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            double sum = 0;
-            for (size_t k = 0; k < num_inputs; k++)
-            {
-                sum += W2[i][k] * X_train[j][k];
+        for (int i = 0; i < num_neurons_current_layer; i++) {
+            for (int j = 0; j < num_train; j++) {
+                double sum = 0;
+                for (int k = 0; k < num_neurons_previous_layer; k++) {
+                    sum += W[layer][i][k] * ((layer == 0) ? X_train[j][k] : a[layer - 1][k][j]);
+                }
+                a[layer][i][j] = (layer == num_hidden_layers) ? sigmoid(sum + b[layer][i]) : tanh(sum + b[layer][i]);
             }
-
-            a2[i][j] = tanh(sum + b2[i][0]); // the activation function here is tanh()
-        }
-    }
-
-    for (int i = 0; i < num_neurons_layer3; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            double sum = 0;
-            for (size_t k = 0; k < num_neurons_layer2; k++)
-            {
-                sum += W3[i][k] * a2[k][j];
-            }
-
-            a3[i][j] = tanh(sum + b3[i][0]); // the activation function here is tanh()
-        }
-    }
-
-    for (int i = 0; i < num_outputs; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            double sum = 0;
-            for (size_t k = 0; k < num_neurons_layer3; k++)
-            {
-                sum += W4[i][k] * a3[k][j];
-            }
-
-            a4[i][j] = sigmoid(sum + b4[i][0]);
         }
     }
 }
 
-void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_outputs, int num_neurons_layer2, int num_neurons_layer3, 
+void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                 double X_train[][num_inputs], double Y_train[][num_outputs],
-                double W2[][num_inputs], double W3[][num_neurons_layer2], double W4[][num_neurons_layer3],
-                double b2[][1], double b3[][1], double b4[][1],
-                double a2[][num_train], double a3[][num_train], double a4[][num_train])
+                double ***W, double **b, double ***a)
 {
-    double PL1[num_neurons_layer2][num_train];
-    double PL2[num_neurons_layer3][num_train];
-    double PL3[num_outputs][num_train];
-
-    // Calculate PL2 = (a4 - Y_train).*(1-a4).*a4 if the activation function is sigmoid() in layer output
-    for (int i = 0; i < num_outputs; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            PL3[i][j] = (a4[i][j] - Y_train[j][i]) * (1 - a4[i][j]) * a4[i][j];
+    double ***PL = malloc((num_hidden_layers + 1) * sizeof(double **));
+    for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        PL[layer] = malloc(num_neurons_current_layer * sizeof(double *));
+        for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+            PL[layer][neuron] = malloc(num_train * sizeof(double));
         }
     }
 
-    // Calculate PL2 = (1 - H3.^2) .* (W4' * PE3) if the activation function is tanh() in layer 3
-    // Calculate (1 - a3.^2) and store the result in a3_squared_complement
-    double a3_squared_complement[num_neurons_layer3][num_train];
-    for (int i = 0; i < num_neurons_layer3; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            a3_squared_complement[i][j] = 1 - a3[i][j] * a3[i][j];
+    // Calculate PL for the output layer
+    for (int i = 0; i < num_outputs; i++) {
+        for (int j = 0; j < num_train; j++) {
+            PL[num_hidden_layers][i][j] = (a[num_hidden_layers][i][j] - Y_train[j][i]) * (1 - a[num_hidden_layers][i][j]) * a[num_hidden_layers][i][j];
         }
     }
 
-    // Calculate W4' * PL3 and store the result in W4_PL3
-    double W4_PL3[num_neurons_layer3][num_train];
-    for (int i = 0; i < num_neurons_layer3; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            double sum = 0.0;
-            for (int k = 0; k < num_outputs; k++)
-            {
-                sum += W4[k][i] * PL3[k][j];
+    // Calculate PL for the hidden layers
+    for (int layer = num_hidden_layers - 1; layer >= 0; layer--) {
+        int num_neurons_current_layer = num_neurons[layer];
+        int num_neurons_next_layer = (layer == num_hidden_layers - 1) ? num_outputs : num_neurons[layer + 1];
+
+        double *a_squared_complement = malloc(num_neurons_current_layer * num_train * sizeof(double));
+        for (int i = 0; i < num_neurons_current_layer; i++) {
+            for (int j = 0; j < num_train; j++) {
+                a_squared_complement[i * num_train + j] = 1 - a[layer][i][j] * a[layer][i][j];
             }
-            W4_PL3[i][j] = sum;
         }
-    }
 
-    // Calculate PE1 = (1 - H2.^2) .* (W3' * PE2) if the activation function is tanh() in layer 2
-    for (int i = 0; i < num_neurons_layer3; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            PL2[i][j] = a3_squared_complement[i][j] * W4_PL3[i][j];
-        }
-    }
-
-    // Calculate  PE1 = (1 - H2.^2) .* (W3' * PE2) the activation function is tanh()
-    // Calculate (1 - a2.^2) and store the result in a2_squared_complement
-    double a2_squared_complement[num_neurons_layer2][num_train];
-    for (int i = 0; i < num_neurons_layer2; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            a2_squared_complement[i][j] = 1 - a2[i][j] * a2[i][j];
-        }
-    }
-
-    // Calculate W3' * PL2 and store the result in W3_PL2
-    double W3_PL2[num_neurons_layer2][num_train];
-    for (int i = 0; i < num_neurons_layer2; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            double sum = 0.0;
-            for (int k = 0; k < num_neurons_layer3; k++)
-            {
-                sum += W3[k][i] * PL2[k][j];
+        double *W_PL = malloc(num_neurons_current_layer * num_train * sizeof(double));
+        for (int i = 0; i < num_neurons_current_layer; i++) {
+            for (int j = 0; j < num_train; j++) {
+                double sum = 0.0;
+                for (int k = 0; k < num_neurons_next_layer; k++) {
+                    sum += W[layer + 1][k][i] * PL[layer + 1][k][j];
+                }
+                W_PL[i * num_train + j] = sum;
             }
-            W3_PL2[i][j] = sum;
         }
-    }
 
-    // Calculate PL1 = (1 - a2.^2) .* (W3' * PL2) and store the result in PL1
-    for (int i = 0; i < num_neurons_layer2; i++)
-    {
-        for (int j = 0; j < num_train; j++)
-        {
-            PL1[i][j] = a2_squared_complement[i][j] * W3_PL2[i][j];
-        }
-    }
-
-    // Update weights and biases using learning_rate
-    for (int i = 0; i < num_neurons_layer2; i++)
-    {
-        for (int j = 0; j < num_inputs; j++)
-        {
-            double sum = 0.0;
-            for (int k = 0; k < num_train; k++)
-            {
-                sum += PL1[i][k] * X_train[k][j];
+        for (int i = 0; i < num_neurons_current_layer; i++) {
+            for (int j = 0; j < num_train; j++) {
+                PL[layer][i][j] = a_squared_complement[i * num_train + j] * W_PL[i * num_train + j];
             }
-            W2[i][j] -= Learning_rate * sum;
         }
+
+        free(a_squared_complement);
+        free(W_PL);
     }
 
-    for (int i = 0; i < num_neurons_layer3; i++)
-    {
-        for (int j = 0; j < num_neurons_layer2; j++)
-        {
-            double sum = 0.0;
-            for (int k = 0; k < num_train; k++)
-            {
-                sum += PL2[i][k] * a2[j][k];
+    // Update weights and biases using learning_rate and PL
+    for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
+
+        for (int i = 0; i < num_neurons_current_layer; i++) {
+            for (int j = 0; j < num_neurons_previous_layer; j++) {
+                double sum = 0.0;
+                for (int k = 0; k < num_train; k++) {
+                    sum += PL[layer][i][k] * ((layer == 0) ? X_train[k][j] : a[layer - 1][j][k]);
+                }
+                W[layer][i][j] -= Learning_rate * sum;
             }
-            W3[i][j] -= Learning_rate * sum;
         }
-    }
 
-    for (int i = 0; i < num_outputs; i++)
-    {
-        for (int j = 0; j < num_neurons_layer3; j++)
-        {
+        for (int i = 0; i < num_neurons_current_layer; i++) {
             double sum = 0.0;
-            for (int k = 0; k < num_train; k++)
-            {
-                sum += PL3[i][k] * a3[j][k];
+            for (int j = 0; j < num_train; j++) {
+                sum += PL[layer][i][j];
             }
-            W4[i][j] -= Learning_rate * sum;
+            b[layer][i] -= Learning_rate * sum;
         }
     }
 
-    // Update biases b2, b3, and b4
-    for (int i = 0; i < num_neurons_layer2; i++)
-    {
-        double sum = 0.0;
-        for (int j = 0; j < num_train; j++)
-        {
-            sum += PL1[i][j];
+    for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
+        for (int neuron = 0; neuron < num_neurons[layer]; neuron++) {
+            free(PL[layer][neuron]);
         }
-        b2[i][0] -= Learning_rate * sum;
+        free(PL[layer]);
     }
-
-    for (int i = 0; i < num_neurons_layer3; i++)
-    {
-        double sum = 0.0;
-        for (int j = 0; j < num_train; j++)
-        {
-            sum += PL2[i][j];
-        }
-        b3[i][0] -= Learning_rate * sum;
-    }
-
-    for (int i = 0; i < num_outputs; i++)
-    {
-        double sum = 0.0;
-        for (int j = 0; j < num_train; j++)
-        {
-            sum += PL3[i][j];
-        }
-        b4[i][0] -= Learning_rate * sum;
-    }
+    free(PL);
 }
 
-void Evaluation(int num_inputs, int num_outputs, int num_neurons_layer2, int num_neurons_layer3, 
+void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                 int epochs, double learning_rate, double initial_range, int num_train, int num_val,
                 double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs], 
                 double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs])
 {
-    double W2[num_neurons_layer2][num_inputs];
-    double b2[num_neurons_layer2][1];
-
-    double W3[num_neurons_layer3][num_neurons_layer2];
-    double b3[num_neurons_layer3][1];
-
-    double W4[num_outputs][num_neurons_layer3];
-    double b4[num_outputs][1];
-
-
-    
-    // Initialize W2 and b2 arrays with random values between -a and +a
-    for (int i = 0; i < num_neurons_layer2; i++)
-    {
-        for (int j = 0; j < num_inputs; j++)
-        {
-            W2[i][j] = random_double(-initial_range, initial_range);
+    // Allocate memory for weights
+    double ***W = malloc((num_hidden_layers + 1) * sizeof(double **));
+    for (int layer = 0; layer <= num_hidden_layers; layer++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
+        W[layer] = malloc(num_neurons_current_layer * sizeof(double *));
+        for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+            W[layer][neuron] = malloc(num_neurons_previous_layer * sizeof(double));
+            for (int weight = 0; weight < num_neurons_previous_layer; weight++) {
+                W[layer][neuron][weight] = random_double(-initial_range, initial_range);
+            }
         }
-        b2[i][0] = random_double(-initial_range, initial_range);
     }
 
-    // Initialize W3 and b3 arrays with random values between -a and +a
-    for (int i = 0; i < num_neurons_layer3; i++)
-    {
-        for (int j = 0; j < num_neurons_layer2; j++)
-        {
-            W3[i][j] = random_double(-initial_range, initial_range);
+    // Allocate memory for biases
+    double **b = malloc((num_hidden_layers + 1) * sizeof(double *));
+    for (int layer = 0; layer <= num_hidden_layers; layer++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        b[layer] = malloc(num_neurons_current_layer * sizeof(double));
+        for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+            b[layer][neuron] = random_double(-initial_range, initial_range);
         }
-        b3[i][0] = random_double(-initial_range, initial_range);
     }
 
-    // Initialize W4 and b4 arrays with random values between -a and +a
-    for (int i = 0; i < num_outputs; i++)
-    {
-        for (int j = 0; j < num_neurons_layer3; j++)
-        {
-            W4[i][j] = random_double(-initial_range, initial_range);
+    // Allocate memory for activations
+    double ***a = malloc((num_hidden_layers + 1) * sizeof(double **));
+    for (int layer = 0; layer <= num_hidden_layers; layer++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        a[layer] = malloc(num_neurons_current_layer * sizeof(double *));
+        for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+            a[layer][neuron] = malloc(num_train * sizeof(double));
         }
-        b4[i][0] = random_double(-initial_range, initial_range);
     }
 
-    // the final output of each layer, every column is for a set of inputs
-    double a2[num_neurons_layer2][num_train];
-    double a3[num_neurons_layer3][num_train];
-    double a4[num_outputs][num_train];
+    // // Print W
+    // for (int layer = 0; layer <= num_hidden_layers; layer++) {
+    //     int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+    //     int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
+    //     printf("W[%d]:\n", layer);
+    //     for (int i = 0; i < num_neurons_current_layer; i++) {
+    //         for (int j = 0; j < num_neurons_previous_layer; j++) {
+    //             printf("%lf ", W[layer][i][j]);
+    //         }
+    //         printf("\n");
+    //     }
+    //     printf("\n");
+    // }
 
-    for (int ep = 0; ep < epochs; ep++)
-    {
-        // ###################################################### ForwardPass start
+    // // Print b
+    // for (int layer = 0; layer <= num_hidden_layers; layer++) {
+    //     int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+    //     printf("b[%d]:\n", layer);
+    //     for (int i = 0; i < num_neurons_current_layer; i++) {
+    //         printf("%lf ", b[layer][i]);
+    //     }
+    //     printf("\n\n");
+    // }
 
-        ForwardPass(num_train, num_inputs, num_outputs, num_neurons_layer2, num_neurons_layer3,
+    printf("Training...\n\n");
+
+    for (int ep = 1; ep <= epochs; ep++) {
+
+        ForwardPass(num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
                     X_train, Y_train,
-                    W2, W3, W4,
-                    b2, b3, b4,
-                    a2, a3, a4);
-        // ###################################################### end of ForwardPass
-
-        // ###################################################### BackwardPass start
+                    W, b, a);
         
-        BackwardPass(learning_rate, num_train, num_inputs, num_outputs, num_neurons_layer2, num_neurons_layer3,
+        BackwardPass(learning_rate, num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
                     X_train, Y_train,
-                    W2, W3, W4,
-                    b2, b3, b4,
-                    a2, a3, a4);
-        // ###################################################### end of BackwardPass
+                    W, b, a);
 
-        // QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ
-        // ###################################################### Evaluation of accuracies starts
+        if (ep % 100 == 0) {
+            double train_cost = CalculateCost(num_train, num_outputs, Y_train, *a[num_hidden_layers]);
+            double train_accuracy = CalculateAccuracy(num_train, num_outputs, Y_train, *a[num_hidden_layers]);
+            double val_cost = CalculateCost(num_val, num_outputs, Y_val, *a[num_hidden_layers]);
+            double val_accuracy = CalculateAccuracy(num_val, num_outputs, Y_val, *a[num_hidden_layers]);
 
-        if (ep%100==0)
-        {
-        double a4_eval_train[num_outputs][num_train];
-        ForwardPass(num_train, num_inputs, num_outputs, num_neurons_layer2, num_neurons_layer3,
-                    X_train, Y_train,
-                    W2, W3, W4,
-                    b2, b3, b4,
-                    a2, a3, a4_eval_train);
-
-        int correct_predictions = 0;
-        for (int i = 0; i < num_train; i++)
-        {
-            int all_correct = 1; // Assume all outputs are correct for this example
-            for (int j = 0; j < num_outputs; j++)
-            {
-                if ((a4_eval_train[j][i] >= 0.5 && Y_train[i][j] == 0) || (a4_eval_train[j][i] < 0.5 && Y_train[i][j] == 1))
-                {
-                    all_correct = 0; // Found an incorrect prediction for this example
-                    break;
-                }
-            }
-            correct_predictions += all_correct;
-        }
-
-        double accuracy_train = (double)correct_predictions / num_train * 100.0;
-
-        double sum_squared_diff = 0.0;
-        for (int i = 0; i < num_train; i++)
-        {
-            for (int j = 0; j < num_outputs; j++)
-            {
-                double diff = Y_train[i][j] - a4_eval_train[j][i]; // Transpose a4_eval_train by switching indices
-                sum_squared_diff += diff * diff;
-            }
-        }
-
-        // Calculate the cost and divide by num_train
-        double cost_train = sum_squared_diff / num_train;
-
-        
-
-        // QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ
-        /// Explain here why I needed to dynamically allocate the memory
-        double(*a2_val)[num_val] = malloc(num_neurons_layer2 * sizeof(double[num_val]));
-        double(*a3_val)[num_val] = malloc(num_neurons_layer3 * sizeof(double[num_val]));
-        double(*a4_val)[num_val] = malloc(num_outputs * sizeof(double[num_val]));
-
-        ForwardPass(num_val, num_inputs, num_outputs, num_neurons_layer2, num_neurons_layer3,
-                    X_val, Y_val,
-                    W2, W3, W4,
-                    b2, b3, b4,
-                    a2_val, a3_val, a4_val);
-
-        correct_predictions = 0;
-        for (int i = 0; i < num_val; i++)
-        {
-            int all_correct = 1; // Assume all outputs are correct for this example
-            for (int j = 0; j < num_outputs; j++)
-            {
-                if ((a4_val[j][i] >= 0.5 && Y_val[i][j] == 0) || (a4_val[j][i] < 0.5 && Y_val[i][j] == 1))
-                {
-                    all_correct = 0; // Found an incorrect prediction for this example
-                    break;
-                }
-            }
-            correct_predictions += all_correct;
-        }
-
-
-
-        double accuracy_val = (double)correct_predictions / num_val * 100.0;
-
-
-        sum_squared_diff = 0.0;
-        for (int i = 0; i < num_val; i++)
-        {
-            for (int j = 0; j < num_outputs; j++)
-            {
-                double diff = Y_val[i][j] - a4_val[j][i]; // Transpose a4_eval_train by switching indices
-                sum_squared_diff += diff * diff;
-            }
-        }
-
-        free(a2_val);
-        free(a3_val);
-        free(a4_val);
-
-        // Calculate the cost and divide by num_train
-        double cost_val = sum_squared_diff / num_val;
-
-        printf("epoch %d:\n", ep);
-        printf("Train Cost      %lf,    Accuracy: %.2f%%\n",cost_train, accuracy_train);
-        printf("Validation Cost %lf,    Accuracy: %.2f%%\n\n",cost_val, accuracy_val);
-
-
+            printf("Epoch %d:\n", ep);
+            printf("Train Cost: %lf\n", train_cost);
+            printf("Train Accuracy: %lf\n", train_accuracy);
+            printf("Validation Cost: %lf\n", val_cost);
+            printf("Validation Accuracy: %lf\n\n", val_accuracy);
         }
     }
+
+    // Free the dynamically allocated memory for activations
+    for (int layer = 0; layer <= num_hidden_layers; layer++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+            free(a[layer][neuron]);
+        }
+        free(a[layer]);
+    }
+    free(a);
+
+    for (int layer = 0; layer < num_hidden_layers; layer++) {
+        free(W[layer]);
+        free(b[layer]);
+    }
+    free(W);
+    free(b);
+}
+
+double CalculateCost(int num_samples, int num_outputs, double Y[num_samples][num_outputs], double a[num_outputs]) {
+    double cost = 0.0;
+    for (int i = 0; i < num_samples; i++) {
+        for (int j = 0; j < num_outputs; j++) {
+            cost += (Y[i][j] - a[j]) * (Y[i][j] - a[j]);
+        }
+    }
+    cost /= (2 * num_samples);
+    return cost;
+}
+
+double CalculateAccuracy(int num_samples, int num_outputs, double Y[num_samples][num_outputs], double a[num_outputs]) {
+    int correct_predictions = 0;
+    for (int i = 0; i < num_samples; i++) {
+        int predicted_class = 0;
+        double max_activation = a[0];
+        for (int j = 1; j < num_outputs; j++) {
+            if (a[j] > max_activation) {
+                predicted_class = j;
+                max_activation = a[j];
+            }
+        }
+        int true_class = 0;
+        for (int j = 1; j < num_outputs; j++) {
+            if (Y[i][j] > Y[i][true_class]) {
+                true_class = j;
+            }
+        }
+        if (predicted_class == true_class) {
+            correct_predictions++;
+        }
+    }
+    double accuracy = (double)correct_predictions / num_samples;
+    return accuracy;
 }
