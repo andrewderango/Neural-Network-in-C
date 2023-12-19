@@ -6,24 +6,71 @@
 #include <sodium.h> // For randombytes_buf function
 #include "mymodel.h"
 
-// #define num_inputs 2          // N1 = 2
-// #define num_neurons_layer2 40 // N2 = 40
-// #define num_neurons_layer3 20 // N3 = 20
-// #define num_outputs 2         // N4 = 2
 #define initial_range 0.2
-
-// #define Learning_rate 0.005 // 0 - 1, 0.01 - 0.0001
-// #define epochs 100000
-
 #define MAX_ROWS 48120
 #define MAX_COLS 4
-// #define train_split 0.003 // 0.3 percent of data will be used for train
 
-// QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ
-//  The same as ForwardPass, do the function BackwardPass() here
+int main(int argc, char *argv[]) {
+    if (argc < 7) {
+        printf("Sorry, I could not understand your input. Please refer to the following execution format:\n");
+        printf("./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>\n");
+        return 1;
+    }
 
-int main()
-{
+    int epochs = atoi(argv[1]);
+    if (epochs < 1) {
+        printf("Error: epochs parameter must be >= 1\n");
+        return 1;
+    }
+
+    double learning_rate = atof(argv[2]);
+    if (learning_rate <= 0) {
+        printf("Error: learning_rate parameter must be > 0\n");
+        return 1;
+    }
+
+    double train_split = atof(argv[3]);
+    if (train_split <= 0 || train_split > 1) {
+        printf("Error: train_split parameter must be > 0 and <= 1\n");
+        return 1;
+    }
+
+    int num_inputs = atoi(argv[4]);
+    if (num_inputs < 1) {
+        printf("Error: num_inputs parameter must be >= 1\n");
+        return 1;
+    }
+
+    int num_hidden_layers = argc - 6;
+    int *num_neurons = malloc(num_hidden_layers * sizeof(int));
+    for (int i = 0; i < num_hidden_layers; i++) {
+        num_neurons[i] = atoi(argv[i + 5]);
+        if (num_neurons[i] < 1) {
+            printf("Error: num_neurons parameter for hidden layer %d must be >= 1\n", i + 1);
+            return 1;
+        }
+    }
+
+    int num_outputs = atoi(argv[argc - 1]);
+    if (num_outputs < 1) {
+        printf("Error: num_outputs parameter must be >= 1\n");
+        return 1;
+    }
+
+    // Printing out user inputs
+    printf("\n-- NEURAL NETWORK ARCHITECTURE --\n");
+    printf("Epochs: %d\n", epochs);
+    printf("Learning Rate: %f\n", learning_rate);
+    printf("Train Split (Proportion): %f\n", train_split);
+    printf("Input Neurons: %d\n", num_inputs);
+    printf("Output Neurons: %d\n", num_outputs);
+    printf("Hidden Layers: %d\n", num_hidden_layers);
+    printf("Quantity of Neurons in Sequential Hidden Layers: ");
+    for (int i = 0; i < num_hidden_layers; i++) {
+        printf("%d ", num_neurons[i]);
+    } 
+    printf("\n");
+
     // Initialize the 2D array to store the data
     double data[MAX_ROWS][MAX_COLS];
     char *filename = "data.txt";
@@ -32,15 +79,6 @@ int main()
     int max_rows = MAX_ROWS;
     int max_cols = MAX_COLS;
     double init_range = initial_range;
-
-    // inputs
-    int num_inputs = 2;
-    int num_neurons_layer2 = 40;
-    int num_neurons_layer3 = 20;
-    int num_outputs = 2;
-    int epochs = 100000;
-    double learning_rate = 0.005;
-    double train_split = 0.003;
     
     ReadFile(max_rows, max_cols, data, filename);
 
@@ -64,14 +102,24 @@ int main()
 
     for (int row = num_train; row < MAX_ROWS; row++)
     {
-        printf("%d %d \n", row-num_train, row);
+        // printf("%d %d \n", row-num_train, row);
         X_val[row - num_train][0] = data[row][0];
         X_val[row - num_train][1] = data[row][1];
         Y_val[row - num_train][0] = data[row][2];
         Y_val[row - num_train][1] = data[row][3];
     }
 
+    // Temp conversion from num_neurons to num_neurons_layer2 and num_neurons_layer3
+    int num_neurons_layer2 = num_neurons[0];
+    int num_neurons_layer3 = num_neurons[1];
+
+    // Evaluation(num_inputs, num_outputs, num_hidden_layers, num_neurons, 
+    //            epochs, learning_rate, init_range, num_train, num_val,
+    //            X_train, Y_train, X_val, Y_val);
     Evaluation(num_inputs, num_outputs, num_neurons_layer2, num_neurons_layer3, 
                 epochs, learning_rate, init_range, num_train, num_val, 
                 X_train, Y_train, X_val, Y_val);
+
+    free(num_neurons);
+    return 0;
 }
