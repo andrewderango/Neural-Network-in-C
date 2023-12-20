@@ -92,22 +92,8 @@ int main(int argc, char *argv[]) {
     double X_val[num_val][num_inputs];
     double Y_val[num_val][num_outputs];
 
-    for (int row = 0; row < num_train; row++)
-    {
-        X_train[row][0] = data[row][0];
-        X_train[row][1] = data[row][1];
-        Y_train[row][0] = data[row][2];
-        Y_train[row][1] = data[row][3];
-    }
-
-    for (int row = num_train; row < MAX_ROWS; row++)
-    {
-        // printf("%d %d \n", row-num_train, row);
-        X_val[row - num_train][0] = data[row][0];
-        X_val[row - num_train][1] = data[row][1];
-        Y_val[row - num_train][0] = data[row][2];
-        Y_val[row - num_train][1] = data[row][3];
-    }
+    OrganizeData(num_train, num_inputs, num_outputs, num_val, max_rows, max_cols,
+                 data, X_train, Y_train, X_val, Y_val);
 
     Evaluation(num_inputs, num_outputs, num_hidden_layers, num_neurons, 
                epochs, learning_rate, init_range, num_train, num_val,

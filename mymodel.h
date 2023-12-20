@@ -9,6 +9,20 @@ double random_double(double min, double max);
 
 void ReadFile(int MAX_ROWS, int MAX_COLS, double data[MAX_ROWS][MAX_COLS], char* filename);
 
+void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_val, int max_rows, int max_cols,
+                    double data[max_rows][max_cols], double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs],
+                    double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs]);
+
+void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
+                        int num_train, double initial_range,
+                        double ***W, double **b, double ***a);
+
+void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
+                        double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs], 
+                        double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs],
+                        double ***W, double **b, 
+                        double *accuracy_train, double *accuracy_val, double *cost_train, double *cost_val);
+
 void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                 double X_train[][num_inputs],
                 double ***W, double **b, double ***a);
