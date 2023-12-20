@@ -72,17 +72,15 @@ int main(int argc, char *argv[]) {
     printf("\n");
 
     // Initialize the 2D array to store the data
-    double data[MAX_ROWS][MAX_COLS];
+    double data[MAX_ROWS][num_inputs + num_outputs];
     char *filename = "data.txt";
 
     // There should be a better way to handle these define elements
     int max_rows = MAX_ROWS;
-    int max_cols = MAX_COLS;
+    int max_cols = num_inputs + num_outputs; // remove the #define above?????????????????????????????????
     double init_range = INITIAL_RANGE;
     
     ReadFile(max_rows, max_cols, data, filename);
-
-    // Should this be in ReadFile? It seems like it should but the assignment says otherwise
 
     int num_train = MAX_ROWS * train_split + 1;
     int num_val = MAX_ROWS * (1 - train_split);

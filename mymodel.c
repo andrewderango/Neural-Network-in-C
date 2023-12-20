@@ -6,11 +6,13 @@
 #include <sodium.h>
 #include "mymodel.h"
 
-double sigmoid(double x) {
+double sigmoid(double x) 
+{
     return 1.0 / (1.0 + exp(-x));
 }
 
-double random_double(double min, double max) {
+double random_double(double min, double max) 
+{
     unsigned char buffer[sizeof(uint64_t)]; // Buffer to hold random bytes
     uint64_t random_value;
 
@@ -33,28 +35,34 @@ double random_double(double min, double max) {
     return min + scale * (max - min);
 }
 
-void ReadFile(int MAX_ROWS, int MAX_COLS, double data[MAX_ROWS][MAX_COLS], char* filename) {
+void ReadFile(int max_rows, int max_cols, double data[max_rows][max_cols], char* filename) 
+{
     // Open the file in read mode
     FILE *file = fopen(filename, "r");
     if (file == NULL)
     {
-        printf("Error opening the file.\n");
+        printf("Error: Could not open the file.\n");
         exit(1);
     }
 
     int row = 0;
-    char line[100]; /////////////////////////////////////////////////////////////////// This will fail if the line is longer than 100 characters. Fix this, possible via dynamic memory allocation
+    int col = 0;
 
-    // Read each line of the file
-    while (fgets(line, sizeof(line), file))
+    while (fscanf(file, "%lf", &data[row][col]) == 1)
     {
-        // Tokenize the line and store the values in the array
-        sscanf(line, "%lf %lf %lf %lf",
-               &data[row][0], &data[row][1], &data[row][2], &data[row][3]);
-
-        row++;
-        // Break the loop if the array is full to prevent overflow
-        if (row >= MAX_ROWS)
+        col++;
+        char ch = fgetc(file);
+        if (ch == '\n' || ch == EOF)
+        {
+            row++;
+            col = 0;
+        }
+        if (col >= max_cols)
+        {
+            printf("Error: The file given does not have the same number of inputs/outputs as specified\n");
+            exit(1);
+        }
+        if (row >= max_rows)
         {
             printf("\nSuccessfully read the input file: %s\n\n", filename);
             break;
@@ -71,19 +79,26 @@ void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_val, i
 {
     for (int row = 0; row < num_train; row++)
     {
-        X_train[row][0] = data[row][0];
-        X_train[row][1] = data[row][1];
-        Y_train[row][0] = data[row][2];
-        Y_train[row][1] = data[row][3];
+        for (int col = 0; col < num_inputs; col++)
+        {
+            X_train[row][col] = data[row][col];
+        }
+        for (int col = 0; col < num_outputs; col++)
+        {
+            Y_train[row][col] = data[row][col + num_inputs];
+        }
     }
 
     for (int row = num_train; row < max_rows; row++)
     {
-        // printf("%d %d \n", row-num_train, row);
-        X_val[row - num_train][0] = data[row][0];
-        X_val[row - num_train][1] = data[row][1];
-        Y_val[row - num_train][0] = data[row][2];
-        Y_val[row - num_train][1] = data[row][3];
+        for (int col = 0; col < num_inputs; col++)
+        {
+            X_val[row - num_train][col] = data[row][col];
+        }
+        for (int col = 0; col < num_outputs; col++)
+        {
+            Y_val[row - num_train][col] = data[row][col + num_inputs];
+        }
     }
 }
 
