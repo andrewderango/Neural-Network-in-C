@@ -10,43 +10,43 @@ double sigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
 }
 
-double random_double(double min, double max) {
-    // Set the seed for reproducibility
-    srand(1234); // Use any desired seed value
-
-    // Generate a random integer between 0 and RAND_MAX
-    // int random_int = rand();
-    int random_int = 463279;
-
-    // Scale the random integer to a double value in the range [0, 1.0]
-    double scale = (double)random_int / RAND_MAX;
-
-    // Scale the value to the desired range [min, max]
-    return min + scale * (max - min);
-}
-
 // double random_double(double min, double max) {
-//     unsigned char buffer[sizeof(uint64_t)]; // Buffer to hold random bytes
-//     uint64_t random_value;
+//     // Set the seed for reproducibility
+//     srand(1234); // Use any desired seed value
 
-//     // Initialize the sodium library
-//     if (sodium_init() < 0) {
-//         printf("Error initializing the sodium library.\n");
-//         exit(1);
-//     }
+//     // Generate a random integer between 0 and RAND_MAX
+//     // int random_int = rand();
+//     int random_int = 463279;
 
-//     // Generate random bytes
-//     randombytes_buf(buffer, sizeof(uint64_t));
-
-//     // Convert the random bytes to a 64-bit unsigned integer value
-//     memcpy(&random_value, buffer, sizeof(uint64_t));
-
-//     // Scale the 64-bit random integer to a double value in the range [0, 1.0]
-//     double scale = random_value / ((double)UINT64_MAX);
+//     // Scale the random integer to a double value in the range [0, 1.0]
+//     double scale = (double)random_int / RAND_MAX;
 
 //     // Scale the value to the desired range [min, max]
 //     return min + scale * (max - min);
 // }
+
+double random_double(double min, double max) {
+    unsigned char buffer[sizeof(uint64_t)]; // Buffer to hold random bytes
+    uint64_t random_value;
+
+    // Initialize the sodium library
+    if (sodium_init() < 0) {
+        printf("Error initializing the sodium library.\n");
+        exit(1);
+    }
+
+    // Generate random bytes
+    randombytes_buf(buffer, sizeof(uint64_t));
+
+    // Convert the random bytes to a 64-bit unsigned integer value
+    memcpy(&random_value, buffer, sizeof(uint64_t));
+
+    // Scale the 64-bit random integer to a double value in the range [0, 1.0]
+    double scale = random_value / ((double)UINT64_MAX);
+
+    // Scale the value to the desired range [min, max]
+    return min + scale * (max - min);
+}
 
 void ReadFile(int MAX_ROWS, int MAX_COLS, double data[MAX_ROWS][MAX_COLS], char* filename)
 {
@@ -226,45 +226,6 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
         }
     }
 
-    // Print W
-    for (int layer = 0; layer <= num_hidden_layers; layer++) {
-        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
-        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
-        printf("W[%d]:\n", layer);
-        for (int i = 0; i < num_neurons_current_layer; i++) {
-            for (int j = 0; j < num_neurons_previous_layer; j++) {
-                printf("%lf ", W[layer][i][j]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
-
-    // Print b
-    for (int layer = 0; layer <= num_hidden_layers; layer++) {
-        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
-        printf("b[%d]:\n", layer);
-        for (int i = 0; i < num_neurons_current_layer; i++) {
-            printf("%lf ", b[layer][i]);
-        }
-        printf("\n\n");
-    }
-
-    // Print a
-    for (int layer = 0; layer <= num_hidden_layers; layer++) {
-        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
-        printf("a[%d]:\n", layer);
-        for (int i = 0; i < num_neurons_current_layer; i++) {
-            for (int j = 0; j < num_train; j++) {
-                printf("%lf ", a[layer][i][j]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
-
-    printf("Training...\n\n");
-
     for (int ep = 1; ep <= epochs; ep++) {
 
         ForwardPass(num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
@@ -275,58 +236,10 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
                     X_train, Y_train,
                     W, b, a);
 
-        ///// Temp start
-        // Print W
-        for (int layer = 0; layer <= num_hidden_layers; layer++) {
-            int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
-            int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
-            printf("W[%d]:\n", layer);
-            for (int i = 0; i < num_neurons_current_layer; i++) {
-                for (int j = 0; j < num_neurons_previous_layer; j++) {
-                    printf("%lf ", W[layer][i][j]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-
-        // Print b
-        for (int layer = 0; layer <= num_hidden_layers; layer++) {
-            int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
-            printf("b[%d]:\n", layer);
-            for (int i = 0; i < num_neurons_current_layer; i++) {
-                printf("%lf ", b[layer][i]);
-            }
-            printf("\n\n");
-        }
-
-        // Print a
-        for (int layer = 0; layer <= num_hidden_layers; layer++) {
-            int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
-            printf("a[%d]:\n", layer);
-            for (int i = 0; i < num_neurons_current_layer; i++) {
-                for (int j = 0; j < num_train; j++) {
-                    printf("%lf ", a[layer][i][j]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-        ///// Temp end
-
         // if (ep % 100 == 0) {
         if (1) {
-            printf(" ----- EPOCH %d -----\n", ep);
-
-            // print a
-            printf("a:\n");
-            for (int i = 0; i < num_outputs; i++) {
-                for (int j = 0; j < num_train; j++) {
-                    printf("%lf ", a[num_hidden_layers][i][j]);
-                }
-                printf("\n");
-            }
-
+            
+            // Allocate memory for training network activations
             double ***a_train = malloc((num_hidden_layers + 1) * sizeof(double **));
             for (int layer = 0; layer <= num_hidden_layers; layer++) {
                 int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
@@ -340,53 +253,12 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
                         X_train, Y_train,
                         W, b, a_train);
 
-            // Print a_train
-            printf("a_train:\n");
-            for (int layer = 0; layer <= num_hidden_layers; layer++) {
-                printf("a[%d]:\n", layer);
-                int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
-                for (int i = 0; i < num_neurons_current_layer; i++) {
-                    for (int j = 0; j < num_train; j++) {
-                        printf("%lf ", a_train[layer][i][j]);
-                    }
-                    printf("\n");
-                }
-                printf("\n");
-            }
-
-            // print y_train
-            printf("Y_train:\n");
-            for (int i = 0; i < num_outputs; i++) {
-                for (int j = 0; j < num_train; j++) {
-                    printf("%lf ", Y_train[j][i]);
-                }
-                printf("\n");
-            }
-
-            // print a_train[num_hidden_layers]
-            printf("a_train[%d]:\n", num_hidden_layers);
-            for (int i = 0; i < num_outputs; i++) {
-                for (int j = 0; j < num_train; j++) {
-                    printf("%lf ", a_train[num_hidden_layers][i][j]);
-                }
-                printf("\n");
-            }
-
-            printf("\n\n\n");
-            // print a_train[num_hidden_layers]
-            printf("a_train[%d]:\n", num_hidden_layers);
-            for (int i = 0; i < num_outputs; i++) {
-                for (int j = 0; j < num_train; j++) {
-                    printf("%lf ", a_train[num_hidden_layers][i][j]);
-                }
-                printf("\n");
-            }
-
             // Allocate memory for output neurons
             double **output_neurons_train = malloc(num_train * sizeof(double *));
             for (int i = 0; i < num_train; i++) {
                 output_neurons_train[i] = malloc(num_outputs * sizeof(double));
             }
+
             // Transpose a_train[num_hidden_layers] to output_neurons_train
             for (int i = 0; i < num_outputs; i++) {
                 for (int j = 0; j < num_train; j++) {
@@ -394,27 +266,17 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
                 }
             }
 
-            // print output neurons
-            printf("output_neurons_train:\n");
-            for (int i = 0; i < num_train; i++) {
-                for (int j = 0; j < num_outputs; j++) {
-                    printf("%lf ", output_neurons_train[i][j]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-
             // Calculate cost
             double sum_squared_diff = 0.0;
             for (int i = 0; i < num_train; i++) {
                 for (int j = 0; j < num_outputs; j++) {
                     double diff = output_neurons_train[i][j] - Y_train[i][j];
-                    printf("%d, %d | %f - %f = %f\t%f\n", i, j, output_neurons_train[i][j], Y_train[i][j], diff, sum_squared_diff);
                     sum_squared_diff += diff * diff;
                 }
             }
             double cost_train = sum_squared_diff / num_train;
 
+            // Calculate binary accuracy
             int correct_predictions = 0;
             for (int i = 0; i < num_train; i++) {
                 int all_correct = 1;
@@ -426,12 +288,9 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
                 }
                 correct_predictions += all_correct;
             }
-            printf("correct_predictions: %d\n", correct_predictions);
-            printf("num_train: %d\n", num_train);
             double accuracy_train = (double)correct_predictions / num_train;
 
-            ///// start
-
+            // Allocate memory for validation network activations
             double ***a_val = malloc((num_hidden_layers + 1) * sizeof(double **));
             for (int layer = 0; layer <= num_hidden_layers; layer++) {
                 int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
@@ -441,6 +300,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
                 }
             }
 
+            // Forward pass for validation network
             ForwardPass(num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
                         X_val, Y_val,
                         W, b, a_val);
@@ -450,6 +310,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
             for (int i = 0; i < num_val; i++) {
                 output_neurons_val[i] = malloc(num_outputs * sizeof(double));
             }
+
             // Transpose a_val[num_hidden_layers] to output_neurons_val
             for (int i = 0; i < num_outputs; i++) {
                 for (int j = 0; j < num_val; j++) {
@@ -480,14 +341,9 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
             }
             double accuracy_val = (double)correct_predictions / num_val;
 
-            ///// end
-
             printf("Epoch %d:\n", ep);
             printf("Train Cost      %lf     Accuracy: %.2f%%\n", cost_train, accuracy_train*100);
             printf("Validation Cost %lf     Accuracy: %.2f%%\n\n", cost_val, accuracy_val*100);
-            
-            // printf("Validation Cost: %lf\n", val_cost);
-            // printf("Validation Accuracy: %lf\n\n", val_accuracy);
 
             // Free memory for a_train
             for (int layer = 0; layer <= num_hidden_layers; layer++) {

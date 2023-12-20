@@ -3,10 +3,10 @@
 #include <math.h>
 #include <time.h>
 #include <string.h>
-#include <sodium.h> // For randombytes_buf function
+#include <sodium.h>
 #include "mymodel.h"
 
-#define initial_range 0.2
+#define INITIAL_RANGE 0.2
 #define MAX_ROWS 48120
 #define MAX_COLS 4
 
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     // There should be a better way to handle these define elements
     int max_rows = MAX_ROWS;
     int max_cols = MAX_COLS;
-    double init_range = initial_range;
+    double init_range = INITIAL_RANGE;
     
     ReadFile(max_rows, max_cols, data, filename);
 
