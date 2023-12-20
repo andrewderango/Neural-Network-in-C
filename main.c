@@ -6,7 +6,7 @@
 #include <sodium.h> // For randombytes_buf function
 #include "mymodel.h"
 
-#define initial_range 0.2
+#define INITIAL_RANGE 0.2
 #define MAX_ROWS 48120
 #define MAX_COLS 4
 
@@ -78,36 +78,22 @@ int main(int argc, char *argv[]) {
     // There should be a better way to handle these define elements
     int max_rows = MAX_ROWS;
     int max_cols = MAX_COLS;
-    double init_range = initial_range;
+    double init_range = INITIAL_RANGE;
     
     ReadFile(max_rows, max_cols, data, filename);
 
     // Should this be in ReadFile? It seems like it should but the assignment says otherwise
 
-    int num_train = MAX_ROWS *train_split+1;
-    int num_val = MAX_ROWS *(1-train_split);
+    int num_train = MAX_ROWS * train_split + 1;
+    int num_val = MAX_ROWS * (1 - train_split);
 
     double X_train[num_train][num_inputs];
     double Y_train[num_train][num_outputs];
     double X_val[num_val][num_inputs];
     double Y_val[num_val][num_outputs];
 
-    for (int row = 0; row < num_train; row++)
-    {
-        X_train[row][0] = data[row][0];
-        X_train[row][1] = data[row][1];
-        Y_train[row][0] = data[row][2];
-        Y_train[row][1] = data[row][3];
-    }
-
-    for (int row = num_train; row < MAX_ROWS; row++)
-    {
-        // printf("%d %d \n", row-num_train, row);
-        X_val[row - num_train][0] = data[row][0];
-        X_val[row - num_train][1] = data[row][1];
-        Y_val[row - num_train][0] = data[row][2];
-        Y_val[row - num_train][1] = data[row][3];
-    }
+    OrganizeData(num_train, num_inputs, num_outputs, num_val, max_rows, max_cols,
+                    data, X_train, Y_train, X_val, Y_val);
 
     // Temp conversion from num_neurons to num_neurons_layer2 and num_neurons_layer3
     int num_neurons_layer2 = num_neurons[0];
