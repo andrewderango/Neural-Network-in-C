@@ -84,8 +84,8 @@ int main(int argc, char *argv[]) {
 
     // Should this be in ReadFile? It seems like it should but the assignment says otherwise
 
-    int num_train = MAX_ROWS *train_split+1;
-    int num_val = MAX_ROWS *(1-train_split);
+    int num_train = MAX_ROWS * train_split + 1;
+    int num_val = MAX_ROWS * (1 - train_split);
 
     double X_train[num_train][num_inputs];
     double Y_train[num_train][num_outputs];

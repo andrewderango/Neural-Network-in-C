@@ -10,21 +10,6 @@ double sigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
 }
 
-// double random_double(double min, double max) {
-//     // Set the seed for reproducibility
-//     srand(1234); // Use any desired seed value
-
-//     // Generate a random integer between 0 and RAND_MAX
-//     // int random_int = rand();
-//     int random_int = 463279;
-
-//     // Scale the random integer to a double value in the range [0, 1.0]
-//     double scale = (double)random_int / RAND_MAX;
-
-//     // Scale the value to the desired range [min, max]
-//     return min + scale * (max - min);
-// }
-
 double random_double(double min, double max) {
     unsigned char buffer[sizeof(uint64_t)]; // Buffer to hold random bytes
     uint64_t random_value;
@@ -82,7 +67,7 @@ void ReadFile(int MAX_ROWS, int MAX_COLS, double data[MAX_ROWS][MAX_COLS], char*
 }
 
 void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
-                double X_train[][num_inputs], double Y_train[][num_outputs],
+                double X_train[][num_inputs],
                 double ***W, double **b, double ***a)
 {
     for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
@@ -229,15 +214,15 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     for (int ep = 1; ep <= epochs; ep++) {
 
         ForwardPass(num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                    X_train, Y_train,
+                    X_train,
                     W, b, a);
         
         BackwardPass(learning_rate, num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
                     X_train, Y_train,
                     W, b, a);
 
-        // if (ep % 100 == 0) {
-        if (1) {
+        if (ep % 100 == 0) {
+        // if (1) {
             
             // Allocate memory for training network activations
             double ***a_train = malloc((num_hidden_layers + 1) * sizeof(double **));
@@ -250,7 +235,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
             }
 
             ForwardPass(num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                        X_train, Y_train,
+                        X_train,
                         W, b, a_train);
 
             // Allocate memory for output neurons
@@ -302,7 +287,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
 
             // Forward pass for validation network
             ForwardPass(num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                        X_val, Y_val,
+                        X_val,
                         W, b, a_val);
 
             // Allocate memory for output neurons
@@ -342,8 +327,8 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
             double accuracy_val = (double)correct_predictions / num_val;
 
             printf("Epoch %d:\n", ep);
-            printf("Train Cost      %lf     Accuracy: %.2f%%\n", cost_train, accuracy_train*100);
-            printf("Validation Cost %lf     Accuracy: %.2f%%\n\n", cost_val, accuracy_val*100);
+            printf("Train Cost:      %lf     Accuracy: %.2f%%\n", cost_train, accuracy_train*100);
+            printf("Validation Cost: %lf     Accuracy: %.2f%%\n\n", cost_val, accuracy_val*100);
 
             // Free memory for a_train
             for (int layer = 0; layer <= num_hidden_layers; layer++) {

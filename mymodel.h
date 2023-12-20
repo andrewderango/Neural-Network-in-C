@@ -10,7 +10,7 @@ double random_double(double min, double max);
 void ReadFile(int MAX_ROWS, int MAX_COLS, double data[MAX_ROWS][MAX_COLS], char* filename);
 
 void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
-                double X_train[][num_inputs], double Y_train[][num_outputs],
+                double X_train[][num_inputs],
                 double ***W, double **b, double ***a);
 
 void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
