@@ -32,8 +32,12 @@ void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_
 void BackwardPass(double learning_rate, int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
                   double **X_train, double **Y_train, double ***W, double **b, double ***a);
 
-void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
-                int epochs, double learning_rate, double initial_range, int num_train, int num_val,
+void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, char *filename,
+                int epochs, double learning_rate, double initial_range, int num_train, int num_val, double train_split,
                 double **X_train, double **Y_train, double **X_val, double **Y_val);
+
+void download_ann(int epochs, double learning_rate, double initial_range, char *filename, double train_split, int num_train,
+                  int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
+                  double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b);
 
 #endif

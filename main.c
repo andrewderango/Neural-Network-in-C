@@ -111,13 +111,33 @@ int main(int argc, char *argv[]) {
                  data, X_train, Y_train, X_val, Y_val);
 
     // Train the model and evaluate performance
-    Evaluation(num_inputs, num_outputs, num_hidden_layers, num_neurons, 
-               epochs, learning_rate, init_range, num_train, num_val,
+    Evaluation(num_inputs, num_outputs, num_hidden_layers, num_neurons, filename,
+               epochs, learning_rate, init_range, num_train, num_val, train_split,
                X_train, Y_train, X_val, Y_val);
 
     // Free all dynamically allocated memory
     free(num_neurons);
     free(input_data.data);
+
+    for (int i = 0; i < num_train; i++) {
+        free(X_train[i]);
+    }
+    free(X_train);
+
+    for (int i = 0; i < num_train; i++) {
+        free(Y_train[i]);
+    }
+    free(Y_train);
+
+    for (int i = 0; i < num_val; i++) {
+        free(X_val[i]);
+    }
+    free(X_val);
+
+    for (int i = 0; i < num_val; i++) {
+        free(Y_val[i]);
+    }
+    free(Y_val);
 
     return 0;
 }

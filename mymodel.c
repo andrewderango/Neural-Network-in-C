@@ -4,6 +4,7 @@
 #include <time.h>
 #include <string.h>
 #include <sodium.h>
+#include <sys/stat.h>
 #include "mymodel.h"
 
 // Simple sigmoid function for activation function
@@ -417,8 +418,8 @@ void BackwardPass(double learning_rate, int num_train, int num_inputs, int num_o
 }
 
 // Train model and evaluate performance
-void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
-                int epochs, double learning_rate, double initial_range, int num_train, int num_val,
+void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, char *filename,
+                int epochs, double learning_rate, double initial_range, int num_train, int num_val, double train_split,
                 double **X_train, double **Y_train, double **X_val, double **Y_val)
 {
     double ***W = malloc((num_hidden_layers + 1) * sizeof(double **)); // Weights
@@ -453,6 +454,11 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
         }
     }
 
+    // Ask user if they want to download ANN
+    download_ann(epochs, learning_rate, initial_range, filename, train_split, num_train, num_val, 
+                 num_inputs, num_outputs, num_hidden_layers, num_neurons, 
+                 X_train, Y_train, X_val, Y_val, W, b);
+
     // Free the dynamically allocated memory for activations
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
         int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
@@ -470,4 +476,99 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     }
     free(W);
     free(b);
+}
+
+// Download the ANN to a txt file if the user wants
+void download_ann(int epochs, double learning_rate, double initial_range, char *filename, double train_split, int num_train,
+                  int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
+                  double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b) 
+{
+    char userResponse[3];
+    int validResponse = 0;
+
+    // Continue looping until user enters a valid answer
+    while (!validResponse) {
+        printf("Do you want to download the ANN? (yes/no): ");
+        scanf("%s", userResponse);
+
+        // These are the valid responses, otherwise we ask again
+        if (strcmp(userResponse, "yes") == 0 || strcmp(userResponse, "no") == 0 || strcmp(userResponse, "y") == 0 || strcmp(userResponse, "n") == 0 || strcmp(userResponse, "Y") == 0 || strcmp(userResponse, "N") == 0 || strcmp(userResponse, "Yes") == 0 || strcmp(userResponse, "No") == 0) {
+            validResponse = 1;
+        } else {
+            printf("Sorry, '%s' is an invalid response. Please enter 'yes' or 'no'.\n", userResponse);
+        }
+    }
+
+    if (strcmp(userResponse, "yes") == 0 || strcmp(userResponse, "y") == 0 || strcmp(userResponse, "Y") == 0 || strcmp(userResponse, "Yes") == 0) {
+        // Create folder if it doesn't already exist
+        mkdir("Downloaded Data", 0777);
+
+        // Open file inside the folder to write data into
+        FILE *file = fopen("Downloaded Data/ANN_data.txt", "w");
+        if (file == NULL) {
+            printf("Error opening file!\n");
+            return;
+        }
+
+        // Write the ANN's information to the file
+        fprintf(file, "-- NEURAL NETWORK ARCHITECTURE --\n");
+        fprintf(file, "Epochs: %d\n", epochs);
+        fprintf(file, "Learning Rate: %f\n", learning_rate);
+        fprintf(file, "Weight and Bias Initialization Range: (%f, %f)\n", -initial_range, initial_range);
+        fprintf(file, "Dataset: %s\n", filename);
+        fprintf(file, "Train Split (Proportion): %f\n", train_split);
+        fprintf(file, "Training Dataset Samples: %d\n", num_train);
+        fprintf(file, "Validation Dataset Samples: %d\n", num_val);
+        fprintf(file, "Input Neurons (Features): %d\n", num_inputs);
+        fprintf(file, "Output Neurons (Labels): %d\n", num_outputs);
+        fprintf(file, "Hidden Layers: %d\n", num_hidden_layers);
+        fprintf(file, "Quantity of Neurons in Sequential Hidden Layers: ");
+        for (int i = 0; i < num_hidden_layers; i++) {
+            fprintf(file, "%d ", num_neurons[i]);
+        } 
+
+        // Compute metrics so that we can write them in
+        double cost_train, cost_val, accuracy_train, accuracy_val;
+        CalculateMetrics(num_train, num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
+                        X_train, Y_train, X_val, Y_val,
+                        W, b,
+                        &accuracy_train, &accuracy_val, &cost_train, &cost_val);
+
+        // Write the model performance metrics to the file
+        fprintf(file, "\n\n-- MODEL PERFORMANCE --\n");
+        fprintf(file, "Train Cost:      %lf     Accuracy: %.2f%%\n", cost_train, accuracy_train * 100);
+        fprintf(file, "Validation Cost: %lf     Accuracy: %.2f%%\n", cost_val, accuracy_val * 100);
+
+        // Write the weights to the file
+        fprintf(file, "\n-- WEIGHTS --\n");
+        for (int layer = 0; layer <= num_hidden_layers; layer++) {
+            int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+            int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
+            fprintf(file, "Layer %d:\n", layer + 1);
+            for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+                fprintf(file, "Neuron %d: ", neuron + 1);
+                for (int prev_neuron = 0; prev_neuron < num_neurons_previous_layer; prev_neuron++) {
+                    fprintf(file, "%lf ", W[layer][neuron][prev_neuron]);
+                }
+                fprintf(file, "\n");
+            }
+            fprintf(file, "\n");
+        }
+
+        // Write the biases to the file
+        fprintf(file, "\n-- BIASES --\n");
+        for (int layer = 0; layer <= num_hidden_layers; layer++) {
+            int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+            fprintf(file, "Layer %d: ", layer + 1);
+            for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+                fprintf(file, "%lf ", b[layer][neuron]);
+            }
+            fprintf(file, "\n");
+        }
+
+        // Close the file
+        fclose(file);
+
+        printf("The ANN has been downloaded to the following directory: Downloaded Data/ANN_Data.txt.\n");
+    }
 }
