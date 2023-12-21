@@ -89,14 +89,25 @@ int main(int argc, char *argv[]) {
     int num_val = num_rows * (1 - train_split);
 
     // Declare arrays to store the training and validation datasets
-    double X_train[num_train][num_inputs];
-    double Y_train[num_train][num_outputs];
-    double X_val[num_val][num_inputs];
-    double Y_val[num_val][num_outputs];
-                                                                    ////// allocate memory dynamically for these arrays
+    double **X_train = malloc(num_train * sizeof(double *));
+    double **Y_train = malloc(num_train * sizeof(double *));
+    double **X_val = malloc(num_val * sizeof(double *));
+    double **Y_val = malloc(num_val * sizeof(double *));
+    for (int i = 0; i < num_train; i++) {
+        X_train[i] = malloc(num_inputs * sizeof(double));
+    }
+    for (int i = 0; i < num_train; i++) {
+        Y_train[i] = malloc(num_outputs * sizeof(double));
+    }
+    for (int i = 0; i < num_val; i++) {
+        X_val[i] = malloc(num_inputs * sizeof(double));
+    }
+    for (int i = 0; i < num_val; i++) {
+        Y_val[i] = malloc(num_outputs * sizeof(double));
+    }
                                                                     
     // Separate the data into training and validation datasets, proportion defined by the user upon execution
-    OrganizeData(num_train, num_inputs, num_outputs, num_val, num_rows,
+    OrganizeData(num_train, num_inputs, num_outputs, num_rows,
                  data, X_train, Y_train, X_val, Y_val);
 
     // Train the model and evaluate performance

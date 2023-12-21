@@ -83,9 +83,8 @@ InputData ReadFile(char* filename, int num_cols) {
 
 // Split the data into training and validation sets
                                                             ///////////// maybe make random and not just first n rows
-void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_val, int num_rows,
-                    double **data, double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs],
-                    double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs])
+void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_rows,
+                  double **data, double **X_train, double **Y_train, double **X_val, double **Y_val)
 {
     // Assign training rows to x and y training arrays for featuers and labels, respectively
     for (int row = 0; row < num_train; row++) {
@@ -146,11 +145,10 @@ void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, in
 }
 
 // Set values for the cost and accuracy metrics for both the training and validation datasets
-void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
-                        double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs], 
-                        double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs],
-                        double ***W, double **b, 
-                        double *accuracy_train, double *accuracy_val, double *cost_train, double *cost_val)
+void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
+                      double **X_train, double **Y_train, double **X_val, double **Y_val,
+                      double ***W, double **b,
+                      double *accuracy_train, double *accuracy_val, double *cost_train, double *cost_val)
 {
 
     // Declare array to store the training network activations (last layer is the model's predictions on the training dataset)
@@ -291,9 +289,8 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
 }
 
 // Run the model on the training dataset and update the weights and biases
-void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
-                double X_train[][num_inputs],
-                double ***W, double **b, double ***a)
+void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
+                 double **X_train, double ***W, double **b, double ***a)
 {
     // Calculate the activations for each neuron in each layer
     for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
@@ -314,9 +311,8 @@ void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_
 }
 
 // Update the weights and biases using the learning rate and the partial derivatives of the cost function (gradient)
-void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
-                double X_train[][num_inputs], double Y_train[][num_outputs],
-                double ***W, double **b, double ***a)
+void BackwardPass(double learning_rate, int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
+                  double **X_train, double **Y_train, double ***W, double **b, double ***a)
 {
     // Array to store the gradient of the cost function wrt activations
     double ***PL = malloc((num_hidden_layers + 1) * sizeof(double **));
@@ -379,7 +375,7 @@ void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_o
                 for (int k = 0; k < num_train; k++) {
                     sum += PL[layer][i][k] * ((layer == 0) ? X_train[k][j] : a[layer - 1][j][k]);
                 }
-                W[layer][i][j] -= Learning_rate * sum;
+                W[layer][i][j] -= learning_rate * sum;
             }
         }
 
@@ -388,7 +384,7 @@ void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_o
             for (int j = 0; j < num_train; j++) {
                 sum += PL[layer][i][j];
             }
-            b[layer][i] -= Learning_rate * sum;
+            b[layer][i] -= learning_rate * sum;
         }
     }
 
@@ -405,8 +401,7 @@ void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_o
 // Train model and evaluate performance
 void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                 int epochs, double learning_rate, double initial_range, int num_train, int num_val,
-                double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs], 
-                double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs])
+                double **X_train, double **Y_train, double **X_val, double **Y_val)
 {
     double ***W = malloc((num_hidden_layers + 1) * sizeof(double **)); // Weights
     double **b = malloc((num_hidden_layers + 1) * sizeof(double *)); // Biases
