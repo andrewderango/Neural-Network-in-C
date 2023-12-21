@@ -9,53 +9,61 @@
 #define INITIAL_RANGE 0.2 // Initial range (positive and negative) for random weights and biases
 
 int main(int argc, char *argv[]) {
+    // User must enter at least 7 arguments in the command line to define network architecture
     if (argc < 7) {
         printf("Sorry, I could not understand your input. Please refer to the following execution format:\n");
         printf("./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>\n");
         return 1;
     }
 
+    // Extract the epochs to train the model with
     int epochs = atoi(argv[1]);
     if (epochs < 1) {
-        printf("Error: epochs parameter must be >= 1\n");
+        printf("Error: The number of epochs must be at least 1.\n");
         return 1;
     }
 
+    // Extract the learning rate at which the model will be trained with
     double learning_rate = atof(argv[2]);
     if (learning_rate <= 0) {
-        printf("Error: learning_rate parameter must be > 0\n");
+        printf("Error: The learning rate must be greater than 0.\n");
         return 1;
     }
 
+    // Extract the proportion of the data to be used for training. The rest will be used for validation
     double train_split = atof(argv[3]);
     if (train_split <= 0 || train_split > 1) {
-        printf("Error: train_split parameter must be > 0 and <= 1\n");
+        printf("Error: The training split must be a proportion of the input data, between 0 (exclusive) and 1 (inclusive).\n");
         return 1;
     }
 
+    // Extract the number of variables that are used as inputs to the model (independent variables)
     int num_inputs = atoi(argv[4]);
     if (num_inputs < 1) {
-        printf("Error: num_inputs parameter must be >= 1\n");
+        printf("Error: The number of features must be at least 1.\n");
         return 1;
     }
 
+    // Extract the number of neurons in each hidden layer, in order
     int num_hidden_layers = argc - 6;
     int *num_neurons = malloc(num_hidden_layers * sizeof(int));
+    // Iterate through each hidden layer and extract the number of neurons in each
     for (int i = 0; i < num_hidden_layers; i++) {
         num_neurons[i] = atoi(argv[i + 5]);
         if (num_neurons[i] < 1) {
-            printf("Error: num_neurons parameter for hidden layer %d must be >= 1\n", i + 1);
+            printf("Error: The quantity of neurons in hidden layer %d must be at least 1.\n", i + 1);
             return 1;
         }
     }
 
+    // Extract the quantity of variables that are to be used as outputs for the model (dependent variables)
     int num_outputs = atoi(argv[argc - 1]);
     if (num_outputs < 1) {
-        printf("Error: num_outputs parameter must be >= 1\n");
+        printf("Error: The number of labels must be at least 1.\n");
         return 1;
     }
 
-    // Printing out user inputs
+    // Printing out user inputs prior to training
     printf("\n-- NEURAL NETWORK ARCHITECTURE --\n");
     printf("Epochs: %d\n", epochs);
     printf("Learning Rate: %f\n", learning_rate);
@@ -67,34 +75,38 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < num_hidden_layers; i++) {
         printf("%d ", num_neurons[i]);
     } 
-    printf("\n");
+    printf("\n\n");
 
-    // Initialize the 2D array to store the data
-    char *filename = "data.txt";
+    char *filename = "data.txt";                                            ////////////////////////////////  should allow the user to change this
 
+    // Declare variables representing some training and input data information
     int num_cols = num_inputs + num_outputs;
     double init_range = INITIAL_RANGE;
-    
-    // ReadFile(max_rows, num_cols, data, filename);
     InputData input_data = ReadFile(filename, num_cols);
     double **data = input_data.data;
     int num_rows = input_data.num_rows;
-    
     int num_train = num_rows * train_split + 1;
     int num_val = num_rows * (1 - train_split);
 
+    // Declare arrays to store the training and validation datasets
     double X_train[num_train][num_inputs];
     double Y_train[num_train][num_outputs];
     double X_val[num_val][num_inputs];
     double Y_val[num_val][num_outputs];
-
+                                                                    ////// allocate memory dynamically for these arrays
+                                                                    
+    // Separate the data into training and validation datasets, proportion defined by the user upon execution
     OrganizeData(num_train, num_inputs, num_outputs, num_val, num_rows,
                  data, X_train, Y_train, X_val, Y_val);
 
+    // Train the model and evaluate performance
     Evaluation(num_inputs, num_outputs, num_hidden_layers, num_neurons, 
                epochs, learning_rate, init_range, num_train, num_val,
                X_train, Y_train, X_val, Y_val);
 
+    // Free all dynamically allocated memory
     free(num_neurons);
+    free(input_data.data);
+
     return 0;
 }

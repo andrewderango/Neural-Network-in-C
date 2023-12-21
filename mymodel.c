@@ -6,13 +6,13 @@
 #include <sodium.h>
 #include "mymodel.h"
 
-double sigmoid(double x) 
-{
+// Simple sigmoid function for activation function
+double sigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
 }
 
-double random_double(double min, double max) 
-{
+// Generate a random double between min and max
+double random_double(double min, double max) {
     unsigned char buffer[sizeof(uint64_t)]; // Buffer to hold random bytes
     uint64_t random_value;
 
@@ -35,43 +35,37 @@ double random_double(double min, double max)
     return min + scale * (max - min);
 }
 
-InputData ReadFile(char* filename, int num_cols) 
-{
-    // Open the file in read mode
+// Read the data from the file into a 2D array, return the array and row qty
+InputData ReadFile(char* filename, int num_cols) {
+    // Open the file and read
     FILE* file = fopen(filename, "r");
-    if (file == NULL)
-    {
-        printf("Error: Could not open the file.\n");
+    if (file == NULL) {
+        printf("Sorry, I could not open %s. Please ensure that it is in the proper directory.\n", filename);
         exit(1);
     }
 
     // Count the number of rows in the file
     int num_rows = 0;
-    double value;
-    while (fscanf(file, "%lf", &value) == 1)
-    {
-        char ch = fgetc(file);
-        if (ch == '\n' || ch == EOF)
-        {
+    double value_holder; // Garbage variable that holds the value read from the file
+    while (fscanf(file, "%lf", &value_holder) == 1) {
+        char next_character = fgetc(file);
+        if (next_character == '\n' || next_character == EOF) {
             num_rows++;
         }
     }
 
-    // Allocate memory for the data array
-    double** data = (double**)malloc(num_rows * sizeof(double*));
-    for (int i = 0; i < num_rows; i++)
-    {
+    // Allocate memory for 2D array and fill with file data
+    double** data = (double**)malloc(num_rows * sizeof(double *));
+    for (int i = 0; i < num_rows; i++) {
         data[i] = (double*)malloc(num_cols * sizeof(double));
     }
 
-    // Reset the file pointer to the beginning of the file
+    // Read the file again from beginning
     fseek(file, 0, SEEK_SET);
 
-    // Read the data from the file into the data array
-    for (int row = 0; row < num_rows; row++)
-    {
-        for (int col = 0; col < num_cols; col++)
-        {
+    // Transcribe the data from the file into the data array
+    for (int row = 0; row < num_rows; row++) {
+        for (int col = 0; col < num_cols; col++) {
             fscanf(file, "%lf", &data[row][col]);
         }
     }
@@ -82,57 +76,57 @@ InputData ReadFile(char* filename, int num_cols)
     // Create and return DataResult struct
     InputData input_data;
     input_data.data = data;
-    input_data.num_rows = num_rows;    
+    input_data.num_rows = num_rows;
+
     return input_data;
 }
 
+// Split the data into training and validation sets
+                                                            ///////////// maybe make random and not just first n rows
 void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_val, int num_rows,
                     double **data, double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs],
                     double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs])
 {
-    for (int row = 0; row < num_train; row++)
-    {
-        for (int col = 0; col < num_inputs; col++)
-        {
+    // Assign training rows to x and y training arrays for featuers and labels, respectively
+    for (int row = 0; row < num_train; row++) {
+        for (int col = 0; col < num_inputs; col++) {
             X_train[row][col] = data[row][col];
         }
-        for (int col = 0; col < num_outputs; col++)
-        {
+        for (int col = 0; col < num_outputs; col++) {
             Y_train[row][col] = data[row][col + num_inputs];
         }
     }
 
-    for (int row = num_train; row < num_rows; row++)
-    {
-        for (int col = 0; col < num_inputs; col++)
-        {
+    // Assign valadation rows to x and y valadation arrays for features and labels, respectively
+    for (int row = num_train; row < num_rows; row++) {
+        for (int col = 0; col < num_inputs; col++) {
             X_val[row - num_train][col] = data[row][col];
         }
-        for (int col = 0; col < num_outputs; col++)
-        {
+        for (int col = 0; col < num_outputs; col++) {
             Y_val[row - num_train][col] = data[row][col + num_inputs];
         }
     }
 }
 
+// Initialize the weights, biases, and activations arrays
 void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                         int num_train, double initial_range,
                         double ***W, double **b, double ***a)
 {
-    // Initialize weights
+    // Initialize weights. Need the weights for each neuron's of each layer's connections to the previous layer's neurons --> 3D array
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
-        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
-        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer]; // Neurons in the last layer is just the number of labels
+        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1]; // Neurons in the first layer is just the number of features
         W[layer] = malloc(num_neurons_current_layer * sizeof(double *));
         for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
             W[layer][neuron] = malloc(num_neurons_previous_layer * sizeof(double));
-            for (int weight = 0; weight < num_neurons_previous_layer; weight++) {
-                W[layer][neuron][weight] = random_double(-initial_range, initial_range);
+            for (int prev_neuron = 0; prev_neuron < num_neurons_previous_layer; prev_neuron++) {
+                W[layer][neuron][prev_neuron] = random_double(-initial_range, initial_range); // Initialize each weight to rand between -initial_range and initial_range
             }
         }
     }
 
-    // Initialize biases
+    // Initialize biases. Need the biases for each neuron in each layer
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
         int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
         b[layer] = malloc(num_neurons_current_layer * sizeof(double));
@@ -141,7 +135,7 @@ void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, in
         }
     }
 
-    // Initialize activations
+    // Initialize activations. Need the activations for each neuron in each layer
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
         int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
         a[layer] = malloc(num_neurons_current_layer * sizeof(double *));
@@ -151,6 +145,7 @@ void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, in
     }
 }
 
+// Set values for the cost and accuracy metrics for both the training and validation datasets
 void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                         double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs], 
                         double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs],
@@ -158,7 +153,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
                         double *accuracy_train, double *accuracy_val, double *cost_train, double *cost_val)
 {
 
-    // Allocate memory for training network activations
+    // Declare array to store the training network activations (last layer is the model's predictions on the training dataset)
     double ***a_train = malloc((num_hidden_layers + 1) * sizeof(double **));
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
         int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
@@ -167,7 +162,8 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
             a_train[layer][neuron] = malloc(num_train * sizeof(double));
         }
     }
-
+    
+    // Run the model on the training dataset
     ForwardPass(num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
                 X_train,
                 W, b, a_train);
@@ -178,14 +174,14 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
         output_neurons_train[i] = malloc(num_outputs * sizeof(double));
     }
 
-    // Transpose a_train[num_hidden_layers] to output_neurons_train
+    // Transpose a_train[num_hidden_layers] to output_neurons_train because this is the format that the labels are in
     for (int i = 0; i < num_outputs; i++) {
         for (int j = 0; j < num_train; j++) {
             output_neurons_train[j][i] = a_train[num_hidden_layers][i][j];
         }
     }
 
-    // Calculate cost
+    // Calculate cost (MSE but calculated wrong??)
     double sum_squared_diff = 0.0;
     for (int i = 0; i < num_train; i++) {
         for (int j = 0; j < num_outputs; j++) {
@@ -195,7 +191,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
     }
     *cost_train = sum_squared_diff / num_train;
 
-    // Calculate binary accuracy
+    // Calculate dual binary accuracy
     int correct_predictions = 0;
     for (int i = 0; i < num_train; i++) {
         int all_correct = 1;
@@ -209,7 +205,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
     }
     *accuracy_train = (double)correct_predictions / num_train;
 
-    // Allocate memory for validation network activations
+    // Declare array to store the validation network activations (last layer is the model's predictions on the validation dataset)
     double ***a_val = malloc((num_hidden_layers + 1) * sizeof(double **));
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
         int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
@@ -219,7 +215,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
         }
     }
 
-    // Forward pass for validation network
+    // Run the model on the validation dataset
     ForwardPass(num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
                 X_val,
                 W, b, a_val);
@@ -230,7 +226,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
         output_neurons_val[i] = malloc(num_outputs * sizeof(double));
     }
 
-    // Transpose a_val[num_hidden_layers] to output_neurons_val
+    // Transpose a_val[num_hidden_layers] to output_neurons_val because this is the format that the labels are in
     for (int i = 0; i < num_outputs; i++) {
         for (int j = 0; j < num_val; j++) {
             output_neurons_val[j][i] = a_val[num_hidden_layers][i][j];
@@ -247,6 +243,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
     }
     *cost_val = sum_squared_diff / num_val;
 
+    // Calculate dual binary accuracy
     correct_predictions = 0;
     for (int i = 0; i < num_val; i++) {
         int all_correct = 1;
@@ -293,30 +290,35 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
     free(output_neurons_val);
 }
 
+// Run the model on the training dataset and update the weights and biases
 void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                 double X_train[][num_inputs],
                 double ***W, double **b, double ***a)
 {
+    // Calculate the activations for each neuron in each layer
     for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
-        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
-        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
-
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer]; // Neurons in the last layer is just the number of labels
+        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1]; // Neurons in the first layer is just the number of features
+        
+        // Loop throuh each neuron in layer and calculate its activation
         for (int i = 0; i < num_neurons_current_layer; i++) {
             for (int j = 0; j < num_train; j++) {
                 double sum = 0;
                 for (int k = 0; k < num_neurons_previous_layer; k++) {
                     sum += W[layer][i][k] * ((layer == 0) ? X_train[j][k] : a[layer - 1][k][j]);
                 }
-                a[layer][i][j] = (layer == num_hidden_layers) ? sigmoid(sum + b[layer][i]) : tanh(sum + b[layer][i]);
+                a[layer][i][j] = (layer == num_hidden_layers) ? sigmoid(sum + b[layer][i]) : tanh(sum + b[layer][i]); // Activation function
             }
         }
     }
 }
 
+// Update the weights and biases using the learning rate and the partial derivatives of the cost function (gradient)
 void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                 double X_train[][num_inputs], double Y_train[][num_outputs],
                 double ***W, double **b, double ***a)
 {
+    // Array to store the gradient of the cost function wrt activations
     double ***PL = malloc((num_hidden_layers + 1) * sizeof(double **));
     for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
         int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
@@ -326,14 +328,14 @@ void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_o
         }
     }
 
-    // Calculate PL for the output layer
+    // Compute PL for the output layer by taking gradient of cost
     for (int i = 0; i < num_outputs; i++) {
         for (int j = 0; j < num_train; j++) {
             PL[num_hidden_layers][i][j] = (a[num_hidden_layers][i][j] - Y_train[j][i]) * (1 - a[num_hidden_layers][i][j]) * a[num_hidden_layers][i][j];
         }
     }
 
-    // Calculate PL for the hidden layers
+    // Compute PL for the each hidden layer
     for (int layer = num_hidden_layers - 1; layer >= 0; layer--) {
         int num_neurons_current_layer = num_neurons[layer];
         int num_neurons_next_layer = (layer == num_hidden_layers - 1) ? num_outputs : num_neurons[layer + 1];
@@ -390,6 +392,7 @@ void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_o
         }
     }
 
+    // Free memory for PL
     for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
         for (int neuron = 0; neuron < num_neurons[layer]; neuron++) {
             free(PL[layer][neuron]);
@@ -399,6 +402,7 @@ void BackwardPass(double Learning_rate, int num_train, int num_inputs, int num_o
     free(PL);
 }
 
+// Train model and evaluate performance
 void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                 int epochs, double learning_rate, double initial_range, int num_train, int num_val,
                 double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs], 
@@ -446,6 +450,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     }
     free(a);
 
+    // Free the dynamically allocated memory for weights and biases
     for (int layer = 0; layer < num_hidden_layers; layer++) {
         free(W[layer]);
         free(b[layer]);
