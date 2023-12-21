@@ -6,9 +6,7 @@
 #include <sodium.h>
 #include "mymodel.h"
 
-#define INITIAL_RANGE 0.2
-#define MAX_ROWS 48120
-#define MAX_COLS 4
+#define INITIAL_RANGE 0.2 // Initial range (positive and negative) for random weights and biases
 
 int main(int argc, char *argv[]) {
     if (argc < 7) {
@@ -72,25 +70,25 @@ int main(int argc, char *argv[]) {
     printf("\n");
 
     // Initialize the 2D array to store the data
-    double data[MAX_ROWS][num_inputs + num_outputs];
     char *filename = "data.txt";
 
-    // There should be a better way to handle these define elements
-    int max_rows = MAX_ROWS;
-    int max_cols = num_inputs + num_outputs; // remove the #define above?????????????????????????????????
+    int num_cols = num_inputs + num_outputs;
     double init_range = INITIAL_RANGE;
     
-    ReadFile(max_rows, max_cols, data, filename);
-
-    int num_train = MAX_ROWS * train_split + 1;
-    int num_val = MAX_ROWS * (1 - train_split);
+    // ReadFile(max_rows, num_cols, data, filename);
+    InputData input_data = ReadFile(filename, num_cols);
+    double **data = input_data.data;
+    int num_rows = input_data.num_rows;
+    
+    int num_train = num_rows * train_split + 1;
+    int num_val = num_rows * (1 - train_split);
 
     double X_train[num_train][num_inputs];
     double Y_train[num_train][num_outputs];
     double X_val[num_val][num_inputs];
     double Y_val[num_val][num_outputs];
 
-    OrganizeData(num_train, num_inputs, num_outputs, num_val, max_rows, max_cols,
+    OrganizeData(num_train, num_inputs, num_outputs, num_val, num_rows,
                  data, X_train, Y_train, X_val, Y_val);
 
     Evaluation(num_inputs, num_outputs, num_hidden_layers, num_neurons, 

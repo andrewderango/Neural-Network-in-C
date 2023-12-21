@@ -35,46 +35,59 @@ double random_double(double min, double max)
     return min + scale * (max - min);
 }
 
-void ReadFile(int max_rows, int max_cols, double data[max_rows][max_cols], char* filename) 
+InputData ReadFile(char* filename, int num_cols) 
 {
     // Open the file in read mode
-    FILE *file = fopen(filename, "r");
+    FILE* file = fopen(filename, "r");
     if (file == NULL)
     {
         printf("Error: Could not open the file.\n");
         exit(1);
     }
 
-    int row = 0;
-    int col = 0;
-
-    while (fscanf(file, "%lf", &data[row][col]) == 1)
+    // Count the number of rows in the file
+    int num_rows = 0;
+    double value;
+    while (fscanf(file, "%lf", &value) == 1)
     {
-        col++;
         char ch = fgetc(file);
         if (ch == '\n' || ch == EOF)
         {
-            row++;
-            col = 0;
+            num_rows++;
         }
-        if (col >= max_cols)
+    }
+
+    // Allocate memory for the data array
+    double** data = (double**)malloc(num_rows * sizeof(double*));
+    for (int i = 0; i < num_rows; i++)
+    {
+        data[i] = (double*)malloc(num_cols * sizeof(double));
+    }
+
+    // Reset the file pointer to the beginning of the file
+    fseek(file, 0, SEEK_SET);
+
+    // Read the data from the file into the data array
+    for (int row = 0; row < num_rows; row++)
+    {
+        for (int col = 0; col < num_cols; col++)
         {
-            printf("Error: The file given does not have the same number of inputs/outputs as specified\n");
-            exit(1);
-        }
-        if (row >= max_rows)
-        {
-            printf("\nSuccessfully read the input file: %s\n\n", filename);
-            break;
+            fscanf(file, "%lf", &data[row][col]);
         }
     }
 
     // Close the file
     fclose(file);
+
+    // Create and return DataResult struct
+    InputData input_data;
+    input_data.data = data;
+    input_data.num_rows = num_rows;    
+    return input_data;
 }
 
-void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_val, int max_rows, int max_cols,
-                    double data[max_rows][max_cols], double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs],
+void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_val, int num_rows,
+                    double **data, double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs],
                     double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs])
 {
     for (int row = 0; row < num_train; row++)
@@ -89,7 +102,7 @@ void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_val, i
         }
     }
 
-    for (int row = num_train; row < max_rows; row++)
+    for (int row = num_train; row < num_rows; row++)
     {
         for (int col = 0; col < num_inputs; col++)
         {

@@ -1,16 +1,21 @@
 #ifndef MYMODEL_H
 #define MYMODEL_H
 
+typedef struct {
+    double **data;
+    int num_rows;
+} InputData;
+
 void seed_sodium_library();
 
 double sigmoid(double x);
 
 double random_double(double min, double max);
 
-void ReadFile(int MAX_ROWS, int MAX_COLS, double data[MAX_ROWS][MAX_COLS], char* filename);
+InputData ReadFile(char* filename, int num_cols);
 
-void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_val, int max_rows, int max_cols,
-                    double data[max_rows][max_cols], double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs],
+void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_val, int num_rows,
+                    double **data, double X_train[num_train][num_inputs], double Y_train[num_train][num_outputs],
                     double X_val[num_val][num_inputs], double Y_val[num_val][num_outputs]);
 
 void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
