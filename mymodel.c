@@ -82,29 +82,47 @@ InputData ReadFile(char* filename, int num_cols) {
 }
 
 // Split the data into training and validation sets
-                                                            ///////////// maybe make random and not just first n rows
 void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_rows,
                   double **data, double **X_train, double **Y_train, double **X_val, double **Y_val)
 {
-    // Assign training rows to x and y training arrays for featuers and labels, respectively
+    // Array to store indices of each row of data
+    int* datarow_indices = malloc(num_rows * sizeof(int));
+    for (int i = 0; i < num_rows; i++) {
+        datarow_indices[i] = i;
+    }
+
+    // Shuffle indices array randomly to randomize order of input data. For every row, pick random index and swap
+    for (int i = 0; i < num_rows - 1; i++) {
+        int j = (int)random_double(i + 1, num_rows - 1);
+        int prev_i_index = datarow_indices[i];
+        datarow_indices[i] = datarow_indices[j];
+        datarow_indices[j] = prev_i_index;
+    }
+
+    // Assign training rows to x and y training arrays for features and labels, respectively. Randomized order because of shuffled indices array
     for (int row = 0; row < num_train; row++) {
+        int index = datarow_indices[row];
         for (int col = 0; col < num_inputs; col++) {
-            X_train[row][col] = data[row][col];
+            X_train[row][col] = data[index][col];
         }
         for (int col = 0; col < num_outputs; col++) {
-            Y_train[row][col] = data[row][col + num_inputs];
+            Y_train[row][col] = data[index][col + num_inputs];
         }
     }
 
-    // Assign valadation rows to x and y valadation arrays for features and labels, respectively
+    // Assign validation rows to x and y validation arrays for features and labels, respectively
     for (int row = num_train; row < num_rows; row++) {
+        int index = datarow_indices[row];
         for (int col = 0; col < num_inputs; col++) {
-            X_val[row - num_train][col] = data[row][col];
+            X_val[row - num_train][col] = data[index][col];
         }
         for (int col = 0; col < num_outputs; col++) {
-            Y_val[row - num_train][col] = data[row][col + num_inputs];
+            Y_val[row - num_train][col] = data[index][col + num_inputs];
         }
     }
+
+    // Free the memory allocated for the row indices array
+    free(datarow_indices);
 }
 
 // Initialize the weights, biases, and activations arrays
