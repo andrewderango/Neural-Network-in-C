@@ -7,13 +7,13 @@
 #include <sys/stat.h>
 #include "mymodel.h"
 
-// Simple sigmoid function for activation function
-double sigmoid(double x) {
+// Simple Sigmoid function for activation function
+double Sigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
 }
 
 // Generate a random double between min and max
-double random_double(double min, double max) {
+double RandomDouble(double min, double max) {
     unsigned char buffer[sizeof(uint64_t)]; // Buffer to hold random bytes
     uint64_t random_value;
 
@@ -94,7 +94,7 @@ void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_rows,
 
     // Shuffle indices array randomly to randomize order of input data. For every row, pick random index and swap
     for (int i = 0; i < num_rows - 1; i++) {
-        int j = (int)random_double(i + 1, num_rows - 1);
+        int j = (int)RandomDouble(i + 1, num_rows - 1);
         int prev_i_index = datarow_indices[i];
         datarow_indices[i] = datarow_indices[j];
         datarow_indices[j] = prev_i_index;
@@ -139,7 +139,7 @@ void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, in
         for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
             W[layer][neuron] = malloc(num_neurons_previous_layer * sizeof(double));
             for (int prev_neuron = 0; prev_neuron < num_neurons_previous_layer; prev_neuron++) {
-                W[layer][neuron][prev_neuron] = random_double(-initial_range, initial_range); // Initialize each weight to rand between -initial_range and initial_range
+                W[layer][neuron][prev_neuron] = RandomDouble(-initial_range, initial_range); // Initialize each weight to rand between -initial_range and initial_range
             }
         }
     }
@@ -149,7 +149,7 @@ void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, in
         int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
         b[layer] = malloc(num_neurons_current_layer * sizeof(double));
         for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
-            b[layer][neuron] = random_double(-initial_range, initial_range);
+            b[layer][neuron] = RandomDouble(-initial_range, initial_range);
         }
     }
 
@@ -323,7 +323,7 @@ void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_
                 for (int k = 0; k < num_neurons_previous_layer; k++) {
                     sum += W[layer][i][k] * ((layer == 0) ? X_train[j][k] : a[layer - 1][k][j]);
                 }
-                a[layer][i][j] = (layer == num_hidden_layers) ? sigmoid(sum + b[layer][i]) : tanh(sum + b[layer][i]); // Activation function
+                a[layer][i][j] = (layer == num_hidden_layers) ? Sigmoid(sum + b[layer][i]) : Sigmoid(sum + b[layer][i]); // Activation function
             }
         }
     }
@@ -456,7 +456,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     }
 
     // Ask user if they want to download ANN
-    download_ann(epochs, learning_rate, initial_range, filename, train_split, num_train, num_val, 
+    DownloadANN(epochs, learning_rate, initial_range, filename, train_split, num_train, num_val, 
                  num_inputs, num_outputs, num_hidden_layers, num_neurons, 
                  X_train, Y_train, X_val, Y_val, W, b);
 
@@ -480,7 +480,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
 }
 
 // Download the ANN to a txt file if the user wants
-void download_ann(int epochs, double learning_rate, double initial_range, char *filename, double train_split, int num_train,
+void DownloadANN(int epochs, double learning_rate, double initial_range, char *filename, double train_split, int num_train,
                   int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                   double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b) 
 {
