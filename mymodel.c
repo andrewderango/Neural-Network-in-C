@@ -409,7 +409,8 @@ void BackwardPass(double learning_rate, int num_train, int num_inputs, int num_o
 
     // Free memory for PL
     for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
-        for (int neuron = 0; neuron < num_neurons[layer]; neuron++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
             free(PL[layer][neuron]);
         }
         free(PL[layer]);

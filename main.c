@@ -117,6 +117,10 @@ int main(int argc, char *argv[]) {
 
     // Free all dynamically allocated memory
     free(num_neurons);
+
+    for (int i = 0; i < num_rows; i++) {
+        free(input_data.data[i]);
+    }
     free(input_data.data);
 
     for (int i = 0; i < num_train; i++) {
