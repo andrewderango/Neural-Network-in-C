@@ -37,9 +37,9 @@ double RandomDouble(double min, double max) {
 }
 
 // Read the data from the file into a 2D array, return the array and row qty
-InputData ReadFile(char* filename, int num_cols) {
+InputData ReadFile(char *filename, int num_cols) {
     // Open the file and read
-    FILE* file = fopen(filename, "r");
+    FILE *file = fopen(filename, "r");
     if (file == NULL) {
         printf("Sorry, I could not open %s. Please ensure that it is in the proper directory.\n", filename);
         exit(1);
@@ -56,9 +56,9 @@ InputData ReadFile(char* filename, int num_cols) {
     }
 
     // Allocate memory for 2D array and fill with file data
-    double** data = (double**)malloc(num_rows * sizeof(double *));
+    double **data = (double **)malloc(num_rows * sizeof(double *));
     for (int i = 0; i < num_rows; i++) {
-        data[i] = (double*)malloc(num_cols * sizeof(double));
+        data[i] = (double *)malloc(num_cols * sizeof(double));
     }
 
     // Read the file again from beginning
@@ -87,7 +87,7 @@ void OrganizeData(int num_train, int num_inputs, int num_outputs, int num_rows,
                   double **data, double **X_train, double **Y_train, double **X_val, double **Y_val)
 {
     // Array to store indices of each row of data
-    int* datarow_indices = malloc(num_rows * sizeof(int));
+    int *datarow_indices = malloc(num_rows * sizeof(int));
     for (int i = 0; i < num_rows; i++) {
         datarow_indices[i] = i;
     }
@@ -165,8 +165,7 @@ void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, in
 
 // Set values for the cost and accuracy metrics for both the training and validation datasets
 void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
-                      double **X_train, double **Y_train, double **X_val, double **Y_val,
-                      double ***W, double **b,
+                      double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b,
                       double *accuracy_train, double *accuracy_val, double *cost_train, double *cost_val)
 {
 
@@ -182,8 +181,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
     
     // Run the model on the training dataset
     ForwardPass(num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                X_train,
-                W, b, a_train);
+                X_train, W, b, a_train);
 
     // Allocate memory for output neurons
     double **output_neurons_train = malloc(num_train * sizeof(double *));
@@ -234,8 +232,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
 
     // Run the model on the validation dataset
     ForwardPass(num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                X_val,
-                W, b, a_val);
+                X_val, W, b, a_val);
 
     // Allocate memory for output neurons
     double **output_neurons_val = malloc(num_val * sizeof(double *));
@@ -433,20 +430,17 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     for (int ep = 1; ep <= epochs; ep++) {
 
         ForwardPass(num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                    X_train,
-                    W, b, a);
+                    X_train, W, b, a);
         
         BackwardPass(learning_rate, num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                    X_train, Y_train,
-                    W, b, a);
+                    X_train, Y_train, W, b, a);
 
         // Evaluate ANN every 100 epochs
         if (ep % 100 == 0) {
             double cost_train, cost_val, accuracy_train, accuracy_val;
 
             CalculateMetrics(num_train, num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                            X_train, Y_train, X_val, Y_val,
-                            W, b,
+                            X_train, Y_train, X_val, Y_val, W, b,
                             &accuracy_train, &accuracy_val, &cost_train, &cost_val);
 
             printf("Epoch %d:\n", ep);
@@ -531,8 +525,7 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
         // Compute metrics so that we can write them in
         double cost_train, cost_val, accuracy_train, accuracy_val;
         CalculateMetrics(num_train, num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                        X_train, Y_train, X_val, Y_val,
-                        W, b,
+                        X_train, Y_train, X_val, Y_val, W, b,
                         &accuracy_train, &accuracy_val, &cost_train, &cost_val);
 
         // Write the model performance metrics to the file
