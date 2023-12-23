@@ -323,7 +323,7 @@ void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_
                 for (int k = 0; k < num_neurons_previous_layer; k++) {
                     sum += W[layer][i][k] * ((layer == 0) ? X_train[j][k] : a[layer - 1][k][j]);
                 }
-                a[layer][i][j] = (layer == num_hidden_layers) ? Sigmoid(sum + b[layer][i]) : Sigmoid(sum + b[layer][i]); // Activation function
+                a[layer][i][j] = (layer == num_hidden_layers) ? Sigmoid(sum + b[layer][i]) : tanh(sum + b[layer][i]); // Activation function
             }
         }
     }
@@ -481,13 +481,13 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
                   int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
                   double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b) 
 {
-    char userResponse[3];
+    char userResponse[100];
     int validResponse = 0;
 
     // Continue looping until user enters a valid answer
     while (!validResponse) {
         printf("Do you want to download the ANN? (yes/no): ");
-        if (scanf("%3s", userResponse) != 1) {
+        if (scanf("%99s", userResponse) != 1) {
             fprintf(stderr, "Error reading input.\n");
             exit(1);
         }
