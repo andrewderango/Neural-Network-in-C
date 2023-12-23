@@ -67,7 +67,10 @@ InputData ReadFile(char *filename, int num_cols) {
     // Transcribe the data from the file into the data array
     for (int row = 0; row < num_rows; row++) {
         for (int col = 0; col < num_cols; col++) {
-            fscanf(file, "%lf", &data[row][col]);
+            if (fscanf(file, "%lf", &data[row][col]) != 1) {
+                fprintf(stderr, "Error reading input from file.\n");
+                exit(1);
+            }
         }
     }
 
@@ -484,7 +487,10 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
     // Continue looping until user enters a valid answer
     while (!validResponse) {
         printf("Do you want to download the ANN? (yes/no): ");
-        scanf("%s", userResponse);
+        if (scanf("%3s", userResponse) != 1) {
+            fprintf(stderr, "Error reading input.\n");
+            exit(1);
+        }
 
         // These are the valid responses, otherwise we ask again
         if (strcmp(userResponse, "yes") == 0 || strcmp(userResponse, "no") == 0 || strcmp(userResponse, "y") == 0 || strcmp(userResponse, "n") == 0 || strcmp(userResponse, "Y") == 0 || strcmp(userResponse, "N") == 0 || strcmp(userResponse, "Yes") == 0 || strcmp(userResponse, "No") == 0) {

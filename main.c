@@ -77,7 +77,14 @@ int main(int argc, char *argv[]) {
     } 
     printf("\n\n");
 
-    char *filename = "data.txt";                                            ////////////////////////////////  should allow the user to change this
+    char filename[100];
+    printf("Please enter the filename containing the training dataset: ");
+    if (scanf("%99s", filename) != 1)
+    {
+        fprintf(stderr, "Error reading input.\n");
+        return 1;
+    }
+    printf("\n");
 
     // Declare variables representing some training and input data information
     int num_cols = num_inputs + num_outputs;
