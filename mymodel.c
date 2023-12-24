@@ -685,6 +685,8 @@ void MakeInputPredictions(char *input_filename, double ***W, double **b, int num
             return;
         }
 
+        fprintf(output_file, "Input Variables      Correct Output       Predicted Output Variables\n");
+
         // Allocate memory for 2D array and fill with file data
         double **data = (double **)malloc(num_rows * sizeof(double *));
         for (int row = 0; row < num_rows; row++) {
@@ -723,7 +725,6 @@ void MakeInputPredictions(char *input_filename, double ***W, double **b, int num
         unsigned long buffer_length = 0;
 
         // Print the data array and make predictions
-        printf("Making predictions on %s ...\n", input_filename);
         for (int row = 0; row < num_rows; row++) {
             for (int col = 0; col < (num_inputs + num_outputs); col++) {
                 buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "%lf ", data[row][col]);
