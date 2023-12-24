@@ -77,21 +77,13 @@ int main(int argc, char *argv[]) {
     } 
     printf("\n\n");
 
-    char filename[100];
-    printf("Please enter the filename containing the training dataset: ");
-    if (scanf("%99s", filename) != 1)
-    {
-        fprintf(stderr, "Error reading input.\n");
-        return 1;
-    }
-    printf("\n");
-
     // Declare variables representing some training and input data information
     int num_cols = num_inputs + num_outputs;
     double init_range = INITIAL_RANGE;
-    InputData input_data = ReadFile(filename, num_cols);
+    InputData input_data = ReadFile(num_cols);
     double **data = input_data.data;
     int num_rows = input_data.num_rows;
+    char *filename = input_data.filename;
     int num_train = num_rows * train_split + 1;
     int num_val = num_rows * (1 - train_split);
 
@@ -119,7 +111,7 @@ int main(int argc, char *argv[]) {
 
     // Train the model and evaluate performance
     Evaluation(num_inputs, num_outputs, num_hidden_layers, num_neurons, filename,
-               epochs, learning_rate, init_range, num_train, num_val, train_split, num_rows,
+               epochs, learning_rate, init_range, num_train, num_val, train_split,
                X_train, Y_train, X_val, Y_val);
 
     // Free all dynamically allocated memory

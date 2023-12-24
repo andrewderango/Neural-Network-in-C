@@ -37,12 +37,33 @@ double RandomDouble(double min, double max) {
 }
 
 // Read the data from the file into a 2D array, return the array and row qty
-InputData ReadFile(char *filename, int num_cols) {
-    // Open the file and read
-    FILE *file = fopen(filename, "r");
-    if (file == NULL) {
-        printf("Sorry, I could not open %s. Please ensure that it is in the proper directory.\n", filename);
-        exit(1);
+InputData ReadFile(int num_cols) {
+    FILE *file;
+    int valid_response = 0;
+    char filename[100];
+    while (valid_response == 0) {
+        printf("Please enter the file name containing the dataset: ");
+
+        // Get the filename from the user
+        if (scanf("%99s", filename) != 1) {
+            printf("Error reading input.\n");
+            continue;
+        }
+
+        // Check if the file name ends with .txt
+        char *extension = strrchr(filename, '.');
+        if (extension == NULL || strcmp(extension, ".txt") != 0) {
+            printf("Invalid file name. Please enter a file name ending with .txt.\n");
+            continue;
+        }
+
+        // Open the file and read
+        file = fopen(filename, "r");
+        if (file == NULL) {
+            printf("Sorry, I could not open '%s'. Please ensure that it is in the proper directory.\n", filename);
+        } else {
+            valid_response = 1;
+        }
     }
 
     // Count the number of rows in the file
@@ -81,6 +102,9 @@ InputData ReadFile(char *filename, int num_cols) {
     InputData input_data;
     input_data.data = data;
     input_data.num_rows = num_rows;
+    
+    input_data.filename = malloc(strlen(filename) + 1);
+    strcpy(input_data.filename, filename);
 
     return input_data;
 }
@@ -483,7 +507,7 @@ void BackwardPass(double learning_rate, int num_train, int num_inputs, int num_o
 
 // Train model and evaluate performance
 void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, char *filename,
-                int epochs, double learning_rate, double initial_range, int num_train, int num_val, double train_split, int num_rows,
+                int epochs, double learning_rate, double initial_range, int num_train, int num_val, double train_split,
                 double **X_train, double **Y_train, double **X_val, double **Y_val)
 {
     double ***W = malloc((num_hidden_layers + 1) * sizeof(double **)); // Weights
@@ -521,8 +545,8 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
                  num_inputs, num_outputs, num_hidden_layers, num_neurons, 
                  X_train, Y_train, X_val, Y_val, W, b);
 
-    // Ask user if they want to make predictions on the original input data file
-    MakeInputPredictions(filename, W, b, num_inputs, num_hidden_layers, num_neurons, num_outputs, num_rows);
+    // Ask user if they want to make predictions on a new input data file
+    MakePredictions(W, b, num_inputs, num_hidden_layers, num_neurons, num_outputs);
 
     // Free the dynamically allocated memory for activations
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
@@ -549,10 +573,10 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
                   double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b) 
 {
     char userResponse[100];
-    int validResponse = 0;
+    int valid_response = 0;
 
     // Continue looping until user enters a valid answer
-    while (!validResponse) {
+    while (!valid_response) {
         printf("Do you want to download the ANN? (yes/no): ");
         if (scanf("%99s", userResponse) != 1) {
             fprintf(stderr, "Error reading input.\n");
@@ -561,7 +585,7 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
 
         // These are the valid responses, otherwise we ask again
         if (strcmp(userResponse, "yes") == 0 || strcmp(userResponse, "no") == 0 || strcmp(userResponse, "y") == 0 || strcmp(userResponse, "n") == 0 || strcmp(userResponse, "Y") == 0 || strcmp(userResponse, "N") == 0 || strcmp(userResponse, "Yes") == 0 || strcmp(userResponse, "No") == 0) {
-            validResponse = 1;
+            valid_response = 1;
         } else {
             printf("Sorry, '%s' is an invalid response. Please enter 'yes' or 'no'.\n", userResponse);
         }
@@ -641,14 +665,14 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
     }
 }
 
-// Make predictions on the original input data file
-void MakeInputPredictions(char *input_filename, double ***W, double **b, int num_inputs, int num_hidden_layers, int *num_neurons, int num_outputs, int num_rows) {
+// Make predictions on a given file
+void MakePredictions(double ***W, double **b, int num_inputs, int num_hidden_layers, int *num_neurons, int num_outputs) {
     char userResponse[100];
-    int validResponse = 0;
+    int valid_response = 0;
 
     // Continue looping until user enters a valid answer
-    while (!validResponse) {
-        printf("Do you want to use this ANN make predictions on %s? (yes/no): ", input_filename);
+    while (!valid_response) {
+        printf("Do you want to use this ANN make predictions on another file of data? (yes/no): ");
         if (scanf("%99s", userResponse) != 1) {
             fprintf(stderr, "Error reading input.\n");
             exit(1);
@@ -656,28 +680,52 @@ void MakeInputPredictions(char *input_filename, double ***W, double **b, int num
 
         // These are the valid responses, otherwise we ask again
         if (strcmp(userResponse, "yes") == 0 || strcmp(userResponse, "no") == 0 || strcmp(userResponse, "y") == 0 || strcmp(userResponse, "n") == 0 || strcmp(userResponse, "Y") == 0 || strcmp(userResponse, "N") == 0 || strcmp(userResponse, "Yes") == 0 || strcmp(userResponse, "No") == 0) {
-            validResponse = 1;
+            valid_response = 1;
         } else {
             printf("Sorry, '%s' is an invalid response. Please enter 'yes' or 'no'.\n", userResponse);
         }
     }
 
     if (strcmp(userResponse, "yes") == 0 || strcmp(userResponse, "y") == 0 || strcmp(userResponse, "Y") == 0 || strcmp(userResponse, "Yes") == 0) {
-        // Open the input file for reading
-        FILE *input_file = fopen(input_filename, "r");
-        if (input_file == NULL) {
-            printf("Error opening input file!\n");
-            return;
+        // Continue looping until user enters a valid answer
+        FILE *input_file = NULL;
+        valid_response = 0;
+        while (!valid_response) {
+            printf("Enter the name of the file that you would like to make predictions on: ");
+            if (scanf("%99s", userResponse) != 1) {
+                fprintf(stderr, "Error reading input.\n");
+                exit(1);
+            }
+
+            input_file = fopen(userResponse, "r");
+            if (input_file == NULL) {
+                printf("Sorry, I could not open '%s'. Please ensure it is in the proper directory!\n", userResponse);
+            } else {
+                valid_response = 1;
+            }
+        }
+
+        // Count the number of rows in input_file
+        int num_rows = 0;
+        char ch;
+        while ((ch = fgetc(input_file)) != EOF) {
+            if (ch == '\n') {
+                num_rows++;
+            }
         }
 
         // Create folder if it doesn't already exist
         mkdir("Downloaded Data", 0777);
 
-        // Create the output file path
+        // Remove the extension from the input file name
+        char *filename_without_ext = strdup(userResponse); // Duplicate the string
+        char *dot = strrchr(filename_without_ext, '.');
+        if (dot) *dot = '\0'; // If there was an extension, remove it
+        char output_filename[100];
+        sprintf(output_filename, "%s_predictions.txt", filename_without_ext);
         char output_filepath[100];
-        char output_filename[100] = "input_predictions.txt";
         sprintf(output_filepath, "Downloaded Data/%s", output_filename);
-
+        free(filename_without_ext);
 
         FILE *output_file = fopen(output_filepath, "w");
         if (output_file == NULL) {
@@ -685,7 +733,7 @@ void MakeInputPredictions(char *input_filename, double ***W, double **b, int num
             return;
         }
 
-        fprintf(output_file, "Input Variables      Correct Output       Predicted Output Variables\n");
+        fprintf(output_file, "Input Variables || Correct Output || Predicted Output Variables\n\n");
 
         // Allocate memory for 2D array and fill with file data
         double **data = (double **)malloc(num_rows * sizeof(double *));
@@ -693,11 +741,13 @@ void MakeInputPredictions(char *input_filename, double ***W, double **b, int num
             data[row] = (double *)malloc((num_inputs + num_outputs) * sizeof(double));
         }
 
+        rewind(input_file);
+
         // Transcribe the data from the file into the data array
         for (int row = 0; row < num_rows; row++) {
             for (int col = 0; col < (num_inputs + num_outputs); col++) {
                 if (fscanf(input_file, "%lf", &data[row][col]) != 1) {
-                    fprintf(stderr, "Error reading input from file.\n");
+                    fprintf(stderr, "Error reading input from file '%s'.\n", userResponse);
                     exit(1);
                 }
             }
@@ -731,7 +781,7 @@ void MakeInputPredictions(char *input_filename, double ***W, double **b, int num
 
                 // Add extra spaces between input and output variables
                 if (col == num_inputs - 1 || col == num_inputs + num_outputs - 1) {
-                    buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "   ");
+                    buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, " || ");
                 }
 
                 // Check if the buffer is full
