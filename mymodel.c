@@ -97,6 +97,7 @@ InputData ReadFile(int num_cols) {
 
     // Close the file
     fclose(file);
+    printf("\n");
 
     // Create and return DataResult struct
     InputData input_data;
@@ -514,6 +515,16 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     double **b = malloc((num_hidden_layers + 1) * sizeof(double *)); // Biases
     double ***a = malloc((num_hidden_layers + 1) * sizeof(double **)); // Activations
 
+    // Write metrics to file
+    mkdir("Downloaded Data", 0777);
+    FILE *file = fopen("Downloaded Data/epoch_metrics.csv", "w");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+    fprintf(file, "Epoch,Train MSE,Validation MSE,Train Accuracy,Validation Accuracy,Train Log Loss,Validation Log Loss,Train R²,Validation R²\n");
+    fclose(file);
+
     // Initialize arrays
     InitializeArrays(num_inputs, num_outputs, num_hidden_layers, num_neurons, num_train, initial_range, W, b, a);
 
@@ -537,6 +548,16 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
             printf("Train Metrics      || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf || R²: %lf\n", mse_train, accuracy_train * 100, log_loss_train, r2_train);
             printf("Validation Metrics || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf || R²: %lf\n", mse_val, accuracy_val * 100, log_loss_val, r2_val);
             printf("\n");
+
+            // Write metrics to file
+            FILE *file = fopen("Downloaded Data/epoch_metrics.csv", "a");
+            if (file == NULL) {
+                printf("Error opening file!\n");
+                return;
+            }
+            fprintf(file, "%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", ep, mse_train, mse_val, accuracy_train, accuracy_val, log_loss_train, log_loss_val, r2_train, r2_val);
+            fclose(file);
+
         }
     }
 

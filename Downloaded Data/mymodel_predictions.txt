@@ -1,2 +1,0 @@
-Input Variables || Correct Output || Predicted Output Variables
-
