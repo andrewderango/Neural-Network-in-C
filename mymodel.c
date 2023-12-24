@@ -169,7 +169,7 @@ void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, in
 // Set values for the cost and accuracy metrics for both the training and validation datasets
 void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
                       double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b,
-                      double *accuracy_train, double *accuracy_val, double *mse_train, double *mse_val, double *log_loss_train, double *log_loss_val)
+                      double *accuracy_train, double *accuracy_val, double *mse_train, double *mse_val, double *log_loss_train, double *log_loss_val, double *r2_train, double *r2_val)
 {
     // Declare array to store the training network activations (last layer is the model's predictions on the training dataset)
     double ***a_train = malloc((num_hidden_layers + 1) * sizeof(double **));
@@ -233,6 +233,27 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
     }
     *log_loss_train /= -num_train;
 
+    // Calculate R2
+    double sum_y = 0.0;
+    double sum_yhat = 0.0;
+    double sum_squared_y = 0.0;
+    double sum_squared_yhat = 0.0;
+    double sum_y_yhat = 0.0;
+    for (int training_example = 0; training_example < num_train; training_example++) {
+        for (int output_neuron = 0; output_neuron < num_outputs; output_neuron++) {
+            sum_y += Y_train[training_example][output_neuron];
+            sum_yhat += output_neurons_train[training_example][output_neuron];
+            sum_squared_y += Y_train[training_example][output_neuron] * Y_train[training_example][output_neuron];
+            sum_squared_yhat += output_neurons_train[training_example][output_neuron] * output_neurons_train[training_example][output_neuron];
+            sum_y_yhat += Y_train[training_example][output_neuron] * output_neurons_train[training_example][output_neuron];
+        }
+    }
+    double mean_y = sum_y / (num_train * num_outputs);
+    double mean_yhat = sum_yhat / (num_train * num_outputs);
+    double numerator = sum_y_yhat - num_train * num_outputs * mean_y * mean_yhat;
+    double denominator = sqrt((sum_squared_y - num_train * num_outputs * mean_y * mean_y) * (sum_squared_yhat - num_train * num_outputs * mean_yhat * mean_yhat));
+    *r2_train = numerator / denominator;
+
     // Declare array to store the validation network activations (last layer is the model's predictions on the validation dataset)
     double ***a_val = malloc((num_hidden_layers + 1) * sizeof(double **));
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
@@ -294,6 +315,27 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
         }
     }
     *log_loss_val /= -num_val;
+
+    // Calculate R2
+    sum_y = 0.0;
+    sum_yhat = 0.0;
+    sum_squared_y = 0.0;
+    sum_squared_yhat = 0.0;
+    sum_y_yhat = 0.0;
+    for (int i = 0; i < num_val; i++) {
+        for (int j = 0; j < num_outputs; j++) {
+            sum_y += Y_val[i][j];
+            sum_yhat += output_neurons_val[i][j];
+            sum_squared_y += Y_val[i][j] * Y_val[i][j];
+            sum_squared_yhat += output_neurons_val[i][j] * output_neurons_val[i][j];
+            sum_y_yhat += Y_val[i][j] * output_neurons_val[i][j];
+        }
+    }
+    mean_y = sum_y / (num_val * num_outputs);
+    mean_yhat = sum_yhat / (num_val * num_outputs);
+    numerator = sum_y_yhat - num_val * num_outputs * mean_y * mean_yhat;
+    denominator = sqrt((sum_squared_y - num_val * num_outputs * mean_y * mean_y) * (sum_squared_yhat - num_val * num_outputs * mean_yhat * mean_yhat));
+    *r2_val = numerator / denominator;
 
     // Free memory for a_train
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
@@ -461,15 +503,15 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
 
         // Evaluate ANN every 100 epochs
         if (ep % 100 == 0) {
-            double mse_train, mse_val, accuracy_train, accuracy_val, log_loss_train, log_loss_val;
+            double mse_train, mse_val, accuracy_train, accuracy_val, log_loss_train, log_loss_val, r2_train, r2_val;
 
             CalculateMetrics(num_train, num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
                             X_train, Y_train, X_val, Y_val, W, b,
-                            &accuracy_train, &accuracy_val, &mse_train, &mse_val, &log_loss_train, &log_loss_val);
+                            &accuracy_train, &accuracy_val, &mse_train, &mse_val, &log_loss_train, &log_loss_val, &r2_train, &r2_val);
 
             printf("Epoch %d:\n", ep);
-            printf("Train Metrics      || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf\n", mse_train, accuracy_train * 100, log_loss_train);
-            printf("Validation Metrics || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf\n", mse_val, accuracy_val * 100, log_loss_val);
+            printf("Train Metrics      || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf || R²: %lf\n", mse_train, accuracy_train * 100, log_loss_train, r2_train);
+            printf("Validation Metrics || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf || R²: %lf\n", mse_val, accuracy_val * 100, log_loss_val, r2_val);
             printf("\n");
         }
     }
@@ -552,15 +594,15 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
         } 
 
         // Compute metrics so that we can write them in
-        double mse_train, mse_val, accuracy_train, accuracy_val, log_loss_train, log_loss_val;
+        double mse_train, mse_val, accuracy_train, accuracy_val, log_loss_train, log_loss_val, r2_train, r2_val;
         CalculateMetrics(num_train, num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
                         X_train, Y_train, X_val, Y_val, W, b,
-                        &accuracy_train, &accuracy_val, &mse_train, &mse_val, &log_loss_train, &log_loss_val);
+                        &accuracy_train, &accuracy_val, &mse_train, &mse_val, &log_loss_train, &log_loss_val, &r2_train, &r2_val);
 
         // Write the model performance metrics to the file
         fprintf(file, "\n\n-- MODEL PERFORMANCE --\n");
-        fprintf(file, "Train Metrics      || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf\n", mse_train, accuracy_train * 100, log_loss_train);
-        fprintf(file, "Validation Metrics || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf\n", mse_val, accuracy_val * 100, log_loss_val);
+        fprintf(file, "Train Metrics      || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf || R²: %lf\n", mse_train, accuracy_train * 100, log_loss_train, r2_train);
+        fprintf(file, "Validation Metrics || MSE: %lf || Accuracy: %.2f%% || Log Loss: %lf || R²: %lf\n", mse_val, accuracy_val * 100, log_loss_val, r2_val);
 
         // Write the weights to the file
         fprintf(file, "\n-- WEIGHTS --\n");

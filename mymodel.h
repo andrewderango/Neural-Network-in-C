@@ -21,7 +21,7 @@ void InitializeArrays(int num_inputs, int num_outputs, int num_hidden_layers, in
 
 void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
                       double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b,
-                      double *accuracy_train, double *accuracy_val, double *cost_train, double *cost_val, double *loss_train, double *loss_val);
+                      double *accuracy_train, double *accuracy_val, double *cost_train, double *cost_val, double *log_loss_train, double *log_loss_val, double *r2_train, double *r2_val);
 
 void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
                  double **X_train, double ***W, double **b, double ***a);
