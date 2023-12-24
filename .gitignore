@@ -1,2 +1,5 @@
 .DS_Store
-.data33.txt.icloud
+*.icloud
+
+!data33.txt
+!README.pdf
