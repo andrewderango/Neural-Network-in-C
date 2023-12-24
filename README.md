@@ -13,6 +13,10 @@ In the development of this program, one of the core principles that were adhered
 5. **Exporting Models**: After the model is trained, users can choose to export their model. The network architecture, weights and biases, will be exported to a new file if the user decides to download the model.
 6. **Performance Metrics**: Several performance metrics can be used to evaluate the model's performance on both training and validation datasets. Regression and classification metrics such as accuracy, MSE, $R^2$, and ROC AUC are available for use.
 
+<p align="center">
+  <img src="https://github.com/andrewderango/Neural-Network-in-C/raw/main/Downloaded%20Data/metrics_vs_epoch.png" alt="Metrics vs Epoch" width="500">
+</p>
+
 ## Using the ANN
 ### Dependencies
 To run this program, the user must have a C compiler, the standard libraries, and the Libsodium library installed. Documentation and installation instructions can be found on their [official website](https://libsodium.gitbook.io/doc/).
