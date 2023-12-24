@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 
     // Train the model and evaluate performance
     Evaluation(num_inputs, num_outputs, num_hidden_layers, num_neurons, filename,
-               epochs, learning_rate, init_range, num_train, num_val, train_split,
+               epochs, learning_rate, init_range, num_train, num_val, train_split, num_rows,
                X_train, Y_train, X_val, Y_val);
 
     // Free all dynamically allocated memory

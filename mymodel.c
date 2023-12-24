@@ -483,7 +483,7 @@ void BackwardPass(double learning_rate, int num_train, int num_inputs, int num_o
 
 // Train model and evaluate performance
 void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, char *filename,
-                int epochs, double learning_rate, double initial_range, int num_train, int num_val, double train_split,
+                int epochs, double learning_rate, double initial_range, int num_train, int num_val, double train_split, int num_rows,
                 double **X_train, double **Y_train, double **X_val, double **Y_val)
 {
     double ***W = malloc((num_hidden_layers + 1) * sizeof(double **)); // Weights
@@ -520,6 +520,9 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     DownloadANN(epochs, learning_rate, initial_range, filename, train_split, num_train, num_val, 
                  num_inputs, num_outputs, num_hidden_layers, num_neurons, 
                  X_train, Y_train, X_val, Y_val, W, b);
+
+    // Ask user if they want to make predictions on the original input data file
+    MakeInputPredictions(filename, W, b, num_inputs, num_hidden_layers, num_neurons, num_outputs, num_rows);
 
     // Free the dynamically allocated memory for activations
     for (int layer = 0; layer <= num_hidden_layers; layer++) {
@@ -635,5 +638,156 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
         fclose(file);
 
         printf("The ANN has been downloaded to the following directory: Downloaded Data/ANN_Data.txt.\n");
+    }
+}
+
+// Make predictions on the original input data file
+void MakeInputPredictions(char *input_filename, double ***W, double **b, int num_inputs, int num_hidden_layers, int *num_neurons, int num_outputs, int num_rows) {
+    char userResponse[100];
+    int validResponse = 0;
+
+    // Continue looping until user enters a valid answer
+    while (!validResponse) {
+        printf("Do you want to use this ANN make predictions on %s? (yes/no): ", input_filename);
+        if (scanf("%99s", userResponse) != 1) {
+            fprintf(stderr, "Error reading input.\n");
+            exit(1);
+        }
+
+        // These are the valid responses, otherwise we ask again
+        if (strcmp(userResponse, "yes") == 0 || strcmp(userResponse, "no") == 0 || strcmp(userResponse, "y") == 0 || strcmp(userResponse, "n") == 0 || strcmp(userResponse, "Y") == 0 || strcmp(userResponse, "N") == 0 || strcmp(userResponse, "Yes") == 0 || strcmp(userResponse, "No") == 0) {
+            validResponse = 1;
+        } else {
+            printf("Sorry, '%s' is an invalid response. Please enter 'yes' or 'no'.\n", userResponse);
+        }
+    }
+
+    if (strcmp(userResponse, "yes") == 0 || strcmp(userResponse, "y") == 0 || strcmp(userResponse, "Y") == 0 || strcmp(userResponse, "Yes") == 0) {
+        // Open the input file for reading
+        FILE *input_file = fopen(input_filename, "r");
+        if (input_file == NULL) {
+            printf("Error opening input file!\n");
+            return;
+        }
+
+        // Create folder if it doesn't already exist
+        mkdir("Downloaded Data", 0777);
+
+        // Create the output file path
+        char output_filepath[100];
+        char output_filename[100] = "input_predictions.txt";
+        sprintf(output_filepath, "Downloaded Data/%s", output_filename);
+
+
+        FILE *output_file = fopen(output_filepath, "w");
+        if (output_file == NULL) {
+            printf("Error opening output file!\n");
+            return;
+        }
+
+        // Allocate memory for 2D array and fill with file data
+        double **data = (double **)malloc(num_rows * sizeof(double *));
+        for (int row = 0; row < num_rows; row++) {
+            data[row] = (double *)malloc((num_inputs + num_outputs) * sizeof(double));
+        }
+
+        // Transcribe the data from the file into the data array
+        for (int row = 0; row < num_rows; row++) {
+            for (int col = 0; col < (num_inputs + num_outputs); col++) {
+                if (fscanf(input_file, "%lf", &data[row][col]) != 1) {
+                    fprintf(stderr, "Error reading input from file.\n");
+                    exit(1);
+                }
+            }
+        }
+
+        // Close the input file
+        fclose(input_file);
+
+        // Allocate memory for a
+        double ***a = malloc((num_hidden_layers + 1) * sizeof(double **));
+        for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
+            int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+            a[layer] = malloc(num_neurons_current_layer * sizeof(double *));
+            for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+                a[layer][neuron] = malloc(num_rows * sizeof(double));
+            }
+        }
+        
+        // Create a buffer to hold the data
+        char buffer[10000] = "";
+        unsigned long buffer_threshold = 8000;
+        unsigned long buffer_length = 0;
+
+        // Print the data array and make predictions
+        printf("Making predictions on %s ...\n", input_filename);
+        for (int row = 0; row < num_rows; row++) {
+            if (row%100 == 0 || row == num_rows - 1) {
+                printf("%d / %d   (%.2lf%%)\n", row, num_rows, (double)(row) / num_rows * 100);
+            }
+            for (int col = 0; col < (num_inputs + num_outputs); col++) {
+                buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "%lf ", data[row][col]);
+
+                // Add extra spaces between input and output variables
+                if (col == num_inputs - 1 || col == num_inputs + num_outputs - 1) {
+                    buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "   ");
+                }
+
+                // Check if the buffer is full
+                if (buffer_length > buffer_threshold) {
+                    fprintf(output_file, "%s", buffer);
+                    buffer[0] = '\0'; // Clear the buffer
+                    buffer_length = 0; // Reset the buffer length
+                }
+            }
+
+            // Make predictions based on these inputs
+            ForwardPass(num_rows, num_inputs, num_outputs, num_hidden_layers, num_neurons, data, W, b, a);
+
+            // Add the predictions to the buffer
+            for (int output = 0; output < num_outputs; output++) {
+                buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "%lf ", a[num_hidden_layers][output][row]);
+
+                // Check if the buffer is full
+                if (buffer_length > buffer_threshold) {
+                    fprintf(output_file, "%s", buffer);
+                    buffer[0] = '\0'; // Clear the buffer
+                    buffer_length = 0; // Reset the buffer length
+                }
+            }
+            buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "\n");
+
+            // Check if the buffer is full
+            if (buffer_length > buffer_threshold) {
+                fprintf(output_file, "%s", buffer);
+                buffer[0] = '\0'; // Clear the buffer
+                buffer_length = 0; // Reset the buffer length
+            }
+        }
+        // Write any remaining data in the buffer to the file
+        if (buffer_length > 0) {
+            fprintf(output_file, "%s", buffer);
+        }
+
+        // Close the output file
+        fclose(output_file);
+
+        printf("Predictions have been added to the file: %s\n", output_filepath);
+
+        // Free memory for data
+        for (int row = 0; row < num_rows; row++) {
+            free(data[row]);
+        }
+        free(data);
+
+        // Free memory for a
+        for (int layer = 0; layer <= num_hidden_layers; layer++) {
+            int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+            for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+                free(a[layer][neuron]);
+            }
+            free(a[layer]);
+        }
+        free(a);
     }
 }
