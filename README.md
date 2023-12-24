@@ -3,7 +3,7 @@
 ## Project Overview
 This project focuses on the development of an Artificial Neural Network (ANN) entirely from scratch using the C programming language. At its core, the program is designed to orchestrate the creation, training, and deployment of a feedforward neural network (FNN). FNNs, a foundational architecture in the realm of ANNs, are characterized by their ability to learn complex relationships for predicting outcomes based on independent variables using a network of interconnected nodes. This project aims to establish a robust framework for constructing and training ANNs tailored to user-provided datasets.
 
-## Key Features
+## Features
 In the development of this program, one of the core principles that were adhered to was to maximize the flexibility of the application for the end user to ultimately provide them with a versatile tool. To achieve this objective, we implemented a variety of features to create a robust and adaptable platform that can cater to diverse user needs.
 
 1. **Customizable Architecture**: Upon execution, users can specify the number of features, labels, hidden layers, and neurons within these hidden layers. They can also adjust the learning rate, epochs, and activation function to ensure that users can leverage the optimal network architecture for their dataset.
@@ -12,3 +12,44 @@ In the development of this program, one of the core principles that were adhered
 4. **Regression and Classification Support**: The artificial neural network can make predictions for both regression and classification problems.
 5. **Exporting Models**: After the model is trained, users can choose to export their model. The network architecture, weights and biases, will be exported to a new file if the user decides to download the model.
 6. **Performance Metrics**: Several performance metrics can be used to evaluate the model's performance on both training and validation datasets. Regression and classification metrics such as accuracy, MSE, $R^2$, and ROC AUC are available for use.
+
+## Using the ANN
+### Dependencies
+To run this program, the user must have a C compiler, the standard libraries, and the Libsodium library installed. Documentation and installation instructions can be found on their [official website](https://libsodium.gitbook.io/doc/).
+
+#### Libsodium Installation on WSL/Linux
+
+To install Libsodium on Windows Subsystem for Linux (WSL), follow these instructions:
+
+1. Open your WSL/Linux terminal.
+2. Update the package list:\
+```sudo apt update```
+3. Install Libsodium:\
+```sudo apt install libsodium-dev```
+
+#### Libsodium Installation on macOS
+
+To install Libsodium on macOS, you can use Homebrew. If Homebrew is not installed, you can install it by following the instructions on the [Homebrew website](https://brew.sh/).
+
+1. Open your terminal.
+2. Install Libsodium using Homebrew:\
+```brew install libsodium```
+
+After completing these steps, Libsodium should be installed on the user's system, and they may proceed to compile the program.
+
+### Makefile Configuration
+Upon downloading the program, it is necessary for the user to configure the Makefile. To seamlessly integrate the ```sodium.h``` library into the program, modifications to the Makefile are required, contingent on the operating system of the user's machine. It is imperative for the user to selectively activate only those sections in the Makefile that pertain to the active operating system during the code compilation process. The Makefile includes clearly labelled comments indicating the specific section to activate based on the operating system in use. The rest should be deleted or commented out.
+
+### Running the Program
+To run the program, follow the proceeding instructions:
+1. Open your terminal.
+2. Navigate to the directory that you would like to download the repository into.
+3. Clone the repository: ```git clone https://github.com/andrewderango/Neural-Network-in-C```
+4. Enter the directory: ```cd Neural-Network-in-C```
+5. Add the data file to this directory.
+6. Ensure that the Makefile is configured properly, as mentioned in the Makefile Configuration section.
+7. Compile the program: ```make```
+8. Execute the program using the following terminal command format:\
+```./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>```
+ For example, to train an FNN using 100,000 epochs, 0.0001 learning rate, 10% of the data used for training, and architecture of 2-64-32-18-2, then run the following command:\
+```./ANN 100000 0.0001 0.1 2 64 32 18 2```
