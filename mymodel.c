@@ -713,6 +713,9 @@ void MakeInputPredictions(char *input_filename, double ***W, double **b, int num
                 a[layer][neuron] = malloc(num_rows * sizeof(double));
             }
         }
+
+        // Make predictions based on these inputs
+        ForwardPass(num_rows, num_inputs, num_outputs, num_hidden_layers, num_neurons, data, W, b, a);
         
         // Create a buffer to hold the data
         char buffer[10000] = "";
@@ -722,9 +725,6 @@ void MakeInputPredictions(char *input_filename, double ***W, double **b, int num
         // Print the data array and make predictions
         printf("Making predictions on %s ...\n", input_filename);
         for (int row = 0; row < num_rows; row++) {
-            if (row%100 == 0 || row == num_rows - 1) {
-                printf("%d / %d   (%.2lf%%)\n", row, num_rows, (double)(row) / num_rows * 100);
-            }
             for (int col = 0; col < (num_inputs + num_outputs); col++) {
                 buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "%lf ", data[row][col]);
 
@@ -740,9 +740,6 @@ void MakeInputPredictions(char *input_filename, double ***W, double **b, int num
                     buffer_length = 0; // Reset the buffer length
                 }
             }
-
-            // Make predictions based on these inputs
-            ForwardPass(num_rows, num_inputs, num_outputs, num_hidden_layers, num_neurons, data, W, b, a);
 
             // Add the predictions to the buffer
             for (int output = 0; output < num_outputs; output++) {
