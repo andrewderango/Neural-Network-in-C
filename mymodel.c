@@ -561,6 +561,10 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
         }
     }
 
+    // Generate coordinates in CSV for ROC curve
+    ROC(num_train, num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
+        Y_train, X_val, Y_val, W, b, a);
+
     // Ask user if they want to download ANN
     DownloadANN(epochs, learning_rate, initial_range, filename, train_split, num_train, num_val, 
                  num_inputs, num_outputs, num_hidden_layers, num_neurons, 
@@ -586,6 +590,127 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     }
     free(W);
     free(b);
+}
+
+// Calculate the true positive rate and false positive rate for the ROC curve
+void ROC(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
+         double **Y_train, double **X_val, double **Y_val, double ***W, double **b, double ***a)
+{
+    // Create folder if it doesn't already exist
+    mkdir("Downloaded Data", 0777);
+
+    // Open file inside the folder to write data into
+    FILE *file_train = fopen("Downloaded Data/ROC_train.csv", "w");
+    if (file_train == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+    fprintf(file_train, "Threshold,False Positive Rate (x),True Positive Rate (y)\n");
+
+    // Create array for the ANN's predictions in one dimension
+    Prediction *predictions_train = malloc(num_train * num_outputs * sizeof(Prediction));
+    for (int i = 0; i < num_train; i++) {
+        for (int j = 0; j < num_outputs; j++) {
+            predictions_train[i*num_outputs + j].true_label = Y_train[i][j];
+            predictions_train[i*num_outputs + j].prediction = a[num_hidden_layers][j][i];
+        }
+    }
+
+    // Iterate through threshold to generate ROC coordinates
+    for (int threshold = 0; threshold <= 1000; threshold++) {
+        int true_positives = 0;
+        int false_positives = 0;
+        int true_negatives = 0;
+        int false_negatives = 0;
+        double true_positive_rate, false_positive_rate;
+
+        // Calculate the number of true positives, false positives, true negatives, and false negatives
+        for (int i = 0; i < num_train * num_outputs; i++) {
+            if (predictions_train[i].true_label == 1 && predictions_train[i].prediction >= (double)threshold/1000) {
+                true_positives++;
+            } else if (predictions_train[i].true_label == 1 && predictions_train[i].prediction < (double)threshold/1000) {
+                false_negatives++;
+            } else if (predictions_train[i].true_label == 0 && predictions_train[i].prediction >= (double)threshold/1000) {
+                false_positives++;
+            } else if (predictions_train[i].true_label == 0 && predictions_train[i].prediction < (double)threshold/1000) {
+                true_negatives++;
+            }
+        }
+        // Calculate TPR and FPR for ROC coordinates
+        true_positive_rate = (double)true_positives / (true_positives + false_negatives);
+        false_positive_rate = (double)false_positives / (false_positives + true_negatives);
+        // printf("%f || (%f, %f)\n", (double)threshold/1000, false_positive_rate, true_positive_rate);
+        fprintf(file_train, "%f,%f,%f\n", (double)threshold/1000, false_positive_rate, true_positive_rate);
+    }
+
+    fclose(file_train);
+    free(predictions_train);
+
+    // Run the model on the validation dataset
+    double ***a_val = malloc((num_hidden_layers + 1) * sizeof(double **));
+    for (int layer = 0; layer <= num_hidden_layers; layer++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        a_val[layer] = malloc(num_neurons_current_layer * sizeof(double *));
+        for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+            a_val[layer][neuron] = malloc(num_val * sizeof(double));
+        }
+    }
+    ForwardPass(num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons, X_val, W, b, a_val);
+
+    // Open file inside the folder to write data into
+    FILE *file_val = fopen("Downloaded Data/ROC_validation.csv", "w");
+    if (file_val == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+    fprintf(file_val, "Threshold,False Positive Rate (x),True Positive Rate (y)\n");
+
+    // Create array for the ANN's predictions in one dimension
+    Prediction *predictions_val = malloc(num_val * num_outputs * sizeof(Prediction));
+    for (int i = 0; i < num_val; i++) {
+        for (int j = 0; j < num_outputs; j++) {
+            predictions_val[i*num_outputs + j].true_label = Y_val[i][j];
+            predictions_val[i*num_outputs + j].prediction = a_val[num_hidden_layers][j][i];
+        }
+    }
+
+    // Iterate through threshold to generate ROC coordinates
+    for (int threshold = 0; threshold <= 1000; threshold++) {
+        int true_positives = 0;
+        int false_positives = 0;
+        int true_negatives = 0;
+        int false_negatives = 0;
+        double true_positive_rate, false_positive_rate;
+
+        // Calculate the number of true positives, false positives, true negatives, and false negatives
+        for (int i = 0; i < num_val * num_outputs; i++) {
+            if (predictions_val[i].true_label == 1 && predictions_val[i].prediction >= (double)threshold/1000) {
+                true_positives++;
+            } else if (predictions_val[i].true_label == 1 && predictions_val[i].prediction < (double)threshold/1000) {
+                false_negatives++;
+            } else if (predictions_val[i].true_label == 0 && predictions_val[i].prediction >= (double)threshold/1000) {
+                false_positives++;
+            } else if (predictions_val[i].true_label == 0 && predictions_val[i].prediction < (double)threshold/1000) {
+                true_negatives++;
+            }
+        }
+        // Calculate TPR and FPR for ROC coordinates
+        true_positive_rate = (double)true_positives / (true_positives + false_negatives);
+        false_positive_rate = (double)false_positives / (false_positives + true_negatives);
+        // printf("%f || (%f, %f)\n", (double)threshold/1000, false_positive_rate, true_positive_rate);
+        fprintf(file_val, "%f,%f,%f\n", (double)threshold/1000, false_positive_rate, true_positive_rate);
+    }
+
+    fclose(file_val);
+    free(predictions_val);
+    for (int layer = 0; layer <= num_hidden_layers; layer++) {
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
+            free(a_val[layer][neuron]);
+        }
+        free(a_val[layer]);
+    }
+    free(a_val);
 }
 
 // Download the ANN to a txt file if the user wants
@@ -728,9 +853,9 @@ void MakePredictions(double ***W, double **b, int num_inputs, int num_hidden_lay
 
         // Count the number of rows in input_file
         int num_rows = 0;
-        char ch;
-        while ((ch = fgetc(input_file)) != EOF) {
-            if (ch == '\n') {
+        char character;
+        while ((character = fgetc(input_file)) != EOF) {
+            if (character == '\n') {
                 num_rows++;
             }
         }

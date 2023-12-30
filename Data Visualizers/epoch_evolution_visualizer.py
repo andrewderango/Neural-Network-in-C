@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 
 file_directory = os.path.dirname(__file__)
 csv_directory = os.path.join(file_directory, 'Downloaded Data/epoch_metrics.csv')
-print(csv_directory)
 df = pd.read_csv(csv_directory)
 
 # Plot each metric
