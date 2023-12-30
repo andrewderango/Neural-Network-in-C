@@ -14,8 +14,8 @@ In the development of this program, one of the core principles that were adhered
 6. **Performance Metrics**: Several performance metrics can be used to evaluate the model's performance on both training and validation datasets. Regression and classification metrics such as accuracy, MSE, $R^2$, and ROC AUC are available for use.
 
 <p align="center">
-  <img src="https://github.com/andrewderango/Neural-Network-in-C/raw/main/Data%20Visualizers/metrics_vs_epoch.png" alt="Metrics vs Epoch" width="400">
-  <img src="https://github.com/andrewderango/Neural-Network-in-C/raw/main/Data%20Visualizers/roc_curve.png" alt="ROC Curve" width="533">
+  <img src="https://github.com/andrewderango/Neural-Network-in-C/raw/main/Data%20Visualizations/metrics_vs_epoch.png" alt="Metrics vs Epoch" width="400">
+  <img src="https://github.com/andrewderango/Neural-Network-in-C/raw/main/Data%20Visualizations/roc_curve.png" alt="ROC Curve" width="533">
 </p>
 
 ## Using the ANN

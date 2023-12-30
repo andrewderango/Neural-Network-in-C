@@ -4,8 +4,8 @@ from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 
 file_directory = os.path.dirname(__file__)
-csv_directory_train = os.path.join(file_directory, 'Downloaded Data/ROC_train.csv')
-csv_directory_val = os.path.join(file_directory, 'Downloaded Data/ROC_validation.csv')
+csv_directory_train = os.path.join(file_directory, 'ROC_train.csv')
+csv_directory_val = os.path.join(file_directory, 'ROC_validation.csv')
 train_df = pd.read_csv(csv_directory_train)
 val_df = pd.read_csv(csv_directory_val)
 

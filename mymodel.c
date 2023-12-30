@@ -253,7 +253,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
         for (int output_neuron = 0; output_neuron < num_outputs; output_neuron++) {
             double y = Y_train[training_example][output_neuron];
             double a = output_neurons_train[training_example][output_neuron];
-            *log_loss_train += y * log(a) + (1 - y) * log(1 - a);
+            *log_loss_train += y * log(a + 1e-16) + (1 - y) * log(1 - a + 1e-16);
         }
     }
     *log_loss_train /= -num_train;
@@ -336,7 +336,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
         for (int j = 0; j < num_outputs; j++) {
             double y = Y_val[i][j];
             double a = output_neurons_val[i][j];
-            *log_loss_val += y * log(a) + (1 - y) * log(1 - a);
+            *log_loss_val += y * log(a + 1e-16) + (1 - y) * log(1 - a + 1e-16);
         }
     }
     *log_loss_val /= -num_val;
@@ -516,8 +516,8 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     double ***a = malloc((num_hidden_layers + 1) * sizeof(double **)); // Activations
 
     // Write metrics to file
-    mkdir("Downloaded Data", 0777);
-    FILE *file = fopen("Downloaded Data/epoch_metrics.csv", "w");
+    mkdir("Exported Data", 0777);
+    FILE *file = fopen("Data Visualizations/epoch_metrics.csv", "w");
     if (file == NULL) {
         printf("Error opening file!\n");
         return;
@@ -550,7 +550,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
             printf("\n");
 
             // Write metrics to file
-            FILE *file = fopen("Downloaded Data/epoch_metrics.csv", "a");
+            FILE *file = fopen("Data Visualizations/epoch_metrics.csv", "a");
             if (file == NULL) {
                 printf("Error opening file!\n");
                 return;
@@ -597,10 +597,10 @@ void ROC(int num_train, int num_val, int num_inputs, int num_outputs, int num_hi
          double **Y_train, double **X_val, double **Y_val, double ***W, double **b, double ***a)
 {
     // Create folder if it doesn't already exist
-    mkdir("Downloaded Data", 0777);
+    mkdir("Data Visualizations", 0777);
 
     // Open file inside the folder to write data into
-    FILE *file_train = fopen("Downloaded Data/ROC_train.csv", "w");
+    FILE *file_train = fopen("Data Visualizations/ROC_train.csv", "w");
     if (file_train == NULL) {
         printf("Error opening file!\n");
         return;
@@ -658,7 +658,7 @@ void ROC(int num_train, int num_val, int num_inputs, int num_outputs, int num_hi
     ForwardPass(num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons, X_val, W, b, a_val);
 
     // Open file inside the folder to write data into
-    FILE *file_val = fopen("Downloaded Data/ROC_validation.csv", "w");
+    FILE *file_val = fopen("Data Visualizations/ROC_validation.csv", "w");
     if (file_val == NULL) {
         printf("Error opening file!\n");
         return;
@@ -739,10 +739,10 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
 
     if (strcmp(userResponse, "yes") == 0 || strcmp(userResponse, "y") == 0 || strcmp(userResponse, "Y") == 0 || strcmp(userResponse, "Yes") == 0) {
         // Create folder if it doesn't already exist
-        mkdir("Downloaded Data", 0777);
+        mkdir("Exported Data", 0777);
 
         // Open file inside the folder to write data into
-        FILE *file = fopen("Downloaded Data/ANN_data.txt", "w");
+        FILE *file = fopen("Exported Data/ANN_data.txt", "w");
         if (file == NULL) {
             printf("Error opening file!\n");
             return;
@@ -807,7 +807,7 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
         // Close the file
         fclose(file);
 
-        printf("The ANN has been downloaded to the following directory: Downloaded Data/ANN_Data.txt.\n");
+        printf("The ANN has been downloaded to the following directory: Exported Data/ANN_Data.txt.\n");
     }
 }
 
@@ -861,7 +861,7 @@ void MakePredictions(double ***W, double **b, int num_inputs, int num_hidden_lay
         }
 
         // Create folder if it doesn't already exist
-        mkdir("Downloaded Data", 0777);
+        mkdir("Exported Data", 0777);
 
         // Remove the extension from the input file name
         char *filename_without_ext = strdup(userResponse); // Duplicate the string
@@ -870,7 +870,7 @@ void MakePredictions(double ***W, double **b, int num_inputs, int num_hidden_lay
         char output_filename[100];
         sprintf(output_filename, "%s_predictions.csv", filename_without_ext);
         char output_filepath[100];
-        sprintf(output_filepath, "Downloaded Data/%s", output_filename);
+        sprintf(output_filepath, "Exported Data/%s", output_filename);
         free(filename_without_ext);
 
         FILE *output_file = fopen(output_filepath, "w");
