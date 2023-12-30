@@ -1,7 +1,6 @@
 .DS_Store
 *.icloud
 ANN
-metrics_vs_epoch.png
 
 !data33.txt
 !README.pdf
