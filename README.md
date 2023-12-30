@@ -14,7 +14,7 @@ In the development of this program, one of the core principles that were adhered
 3. **Real-time Performance Metrics**: During training, the program will update the user on the performance of the model on both the training and validation datasets. Not only does this give the user an idea of the effectiveness of the model, but can show the user how many epochs are sufficient for the training of the model on their dataset.
 4. **Regression and Classification Support**: The artificial neural network can make predictions for both regression and classification problems.
 5. **Exporting Models**: After the model is trained, users can choose to export their model. The network architecture, weights and biases, will be exported to a new file if the user decides to download the model.
-6. **Performance Metrics**: Several performance metrics can be used to evaluate the model's performance on both training and validation datasets. Regression and classification metrics such as accuracy, MSE, $R^2$, and ROC AUC are available for use.
+6. **Performance Metrics**: Several performance metrics can be used to evaluate the model's performance on both training and validation datasets. Regression and classification metrics such as accuracy, MSE, R², binary cross-entropy, and ROC AUC are available for use.
 
 <p align="center">
   <img src="https://github.com/andrewderango/Neural-Network-in-C/raw/main/Data%20Visualizations/metrics_vs_epoch.png" alt="Metrics vs Epoch" width="400">
