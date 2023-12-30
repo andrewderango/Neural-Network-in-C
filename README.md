@@ -3,6 +3,9 @@
 ## Project Overview
 This project focuses on the development of an Artificial Neural Network (ANN) entirely from scratch using the C programming language. At its core, the program is designed to orchestrate the creation, training, and deployment of a feedforward neural network (FNN). FNNs, a foundational architecture in the realm of ANNs, are characterized by their ability to learn complex relationships for predicting outcomes based on independent variables using a network of interconnected nodes. This project aims to establish a robust framework for constructing and training ANNs tailored to user-provided datasets.
 
+## Demo
+A brief demo video that covers an example of training a simple network from the data.txt file is available [here](https://www.youtube.com/watch?v=I1-ug0xZipE).
+
 ## Features
 In the development of this program, one of the core principles that were adhered to was to maximize the flexibility of the application for the end user to ultimately provide them with a versatile tool. To achieve this objective, we implemented a variety of features to create a robust and adaptable platform that can cater to diverse user needs.
 
@@ -55,7 +58,7 @@ To run the program, follow the proceeding instructions:
 6. Ensure that the Makefile is configured properly, as mentioned in the Makefile Configuration section.
 8. Compile the program: ```make```
 9. Execute the program using the following terminal command format:\
-```./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>```
+```./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>```\
  For example, to train an FNN using 100,000 epochs, 0.0001 learning rate, 10% of the data used for training, and architecture of 2-64-32-18-2, then run the following command:\
 ```./ANN 100000 0.0001 0.1 2 64 32 18 2```
 
