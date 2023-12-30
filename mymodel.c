@@ -868,7 +868,7 @@ void MakePredictions(double ***W, double **b, int num_inputs, int num_hidden_lay
         char *dot = strrchr(filename_without_ext, '.');
         if (dot) *dot = '\0'; // If there was an extension, remove it
         char output_filename[100];
-        sprintf(output_filename, "%s_predictions.txt", filename_without_ext);
+        sprintf(output_filename, "%s_predictions.csv", filename_without_ext);
         char output_filepath[100];
         sprintf(output_filepath, "Downloaded Data/%s", output_filename);
         free(filename_without_ext);
@@ -879,7 +879,17 @@ void MakePredictions(double ***W, double **b, int num_inputs, int num_hidden_lay
             return;
         }
 
-        fprintf(output_file, "Input Variables || Correct Output || Predicted Output Variables\n\n");
+        for (int i = 0; i < num_inputs; i++) {
+            fprintf(output_file, "Input Variable %d,", i+1);
+        }
+        for (int i = 0; i < num_outputs; i++) {
+            fprintf(output_file, "Correct Output %d,", i+1);
+        }
+        for (int i = 0; i < num_outputs; i++) {
+            fprintf(output_file, "Predicted Output %d,", i+1);
+        }
+        fseek(output_file, -1, SEEK_CUR);
+        fprintf(output_file, "\n");
 
         // Allocate memory for 2D array and fill with file data
         double **data = (double **)malloc(num_rows * sizeof(double *));
@@ -915,52 +925,18 @@ void MakePredictions(double ***W, double **b, int num_inputs, int num_hidden_lay
         // Make predictions based on these inputs
         ForwardPass(num_rows, num_inputs, num_outputs, num_hidden_layers, num_neurons, data, W, b, a);
         
-        // Create a buffer to hold the data
-        char buffer[10000] = "";
-        unsigned long buffer_threshold = 8000;
-        unsigned long buffer_length = 0;
-
         // Print the data array and make predictions
         for (int row = 0; row < num_rows; row++) {
             for (int col = 0; col < (num_inputs + num_outputs); col++) {
-                buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "%lf ", data[row][col]);
-
-                // Add extra spaces between input and output variables
-                if (col == num_inputs - 1 || col == num_inputs + num_outputs - 1) {
-                    buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, " || ");
-                }
-
-                // Check if the buffer is full
-                if (buffer_length > buffer_threshold) {
-                    fprintf(output_file, "%s", buffer);
-                    buffer[0] = '\0'; // Clear the buffer
-                    buffer_length = 0; // Reset the buffer length
-                }
+                fprintf(output_file, "%lf,", data[row][col]);
             }
 
-            // Add the predictions to the buffer
+            // Add the predictions to the file
             for (int output = 0; output < num_outputs; output++) {
-                buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "%lf ", a[num_hidden_layers][output][row]);
-
-                // Check if the buffer is full
-                if (buffer_length > buffer_threshold) {
-                    fprintf(output_file, "%s", buffer);
-                    buffer[0] = '\0'; // Clear the buffer
-                    buffer_length = 0; // Reset the buffer length
-                }
+                fprintf(output_file, "%lf,", a[num_hidden_layers][output][row]);
             }
-            buffer_length += snprintf(buffer + buffer_length, sizeof(buffer) - buffer_length, "\n");
-
-            // Check if the buffer is full
-            if (buffer_length > buffer_threshold) {
-                fprintf(output_file, "%s", buffer);
-                buffer[0] = '\0'; // Clear the buffer
-                buffer_length = 0; // Reset the buffer length
-            }
-        }
-        // Write any remaining data in the buffer to the file
-        if (buffer_length > 0) {
-            fprintf(output_file, "%s", buffer);
+            fseek(output_file, -1, SEEK_CUR);
+            fprintf(output_file, "\n");
         }
 
         // Close the output file
