@@ -30,18 +30,24 @@ To run this program, the user must have a C compiler, the standard libraries, an
 To install Libsodium on Windows Subsystem for Linux (WSL), follow these instructions:
 
 1. Open your WSL/Linux terminal.
-2. Update the package list:\
-```sudo apt update```
-3. Install Libsodium:\
-```sudo apt install libsodium-dev```
+2. Update the package list:
+```
+sudo apt update
+```
+3. Install Libsodium:
+```
+sudo apt install libsodium-dev
+```
 
 #### Libsodium Installation on macOS
 
 To install Libsodium on macOS, you can use Homebrew. If Homebrew is not installed, you can install it by following the instructions on the [Homebrew website](https://brew.sh/).
 
 1. Open your terminal.
-2. Install Libsodium using Homebrew:\
-```brew install libsodium```
+2. Install Libsodium using Homebrew:
+```
+brew install libsodium
+```
 
 After completing these steps, Libsodium should be installed on the user's system, and they may proceed to compile the program.
 
@@ -52,15 +58,28 @@ Upon downloading the program, it is necessary for the user to configure the Make
 To run the program, follow the proceeding instructions:
 1. Open your terminal.
 2. Navigate to the directory that you would like to download the repository into.
-3. Clone the repository: ```git clone https://github.com/andrewderango/Neural-Network-in-C```
-4. Enter the directory: ```cd Neural-Network-in-C```
+3. Clone the repository: 
+```
+git clone https://github.com/andrewderango/Neural-Network-in-C
+```
+4. Enter the directory:
+```
+cd Neural-Network-in-C
+```
 5. Add the data file to this directory.
 6. Ensure that the Makefile is configured properly, as mentioned in the Makefile Configuration section.
-8. Compile the program: ```make```
-9. Execute the program using the following terminal command format:\
-```./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>```\
- For example, to train an FNN using 100,000 epochs, 0.0001 learning rate, 10% of the data used for training, and architecture of 2-64-32-18-2, then run the following command:\
-```./ANN 100000 0.0001 0.1 2 64 32 18 2```
+8. Compile the program: 
+```
+make
+```
+9. Execute the program using the following terminal command format:
+```
+./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>
+```
+ For example, to train an FNN using 100,000 epochs, 0.0001 learning rate, 10% of the data used for training, and architecture of 2-64-32-18-2, then run the following command:
+```
+./ANN 100000 0.0001 0.1 2 64 32 18 2
+```
 
 ## Program Structure
 
