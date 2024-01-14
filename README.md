@@ -4,7 +4,7 @@
 This project focuses on the development of an Artificial Neural Network (ANN) entirely from scratch using the C programming language. At its core, the program is designed to orchestrate the creation, training, and deployment of a feedforward neural network (FNN). FNNs, a foundational architecture in the realm of ANNs, are characterized by their ability to learn complex relationships for predicting outcomes based on independent variables using a network of interconnected nodes. This project aims to establish a robust framework for constructing and training ANNs tailored to user-provided datasets.
 
 ## Demo
-A brief demo video that covers an example of training a simple network from the data.txt file is available [here](https://www.youtube.com/watch?v=I1-ug0xZipE).
+A brief demo video that covers an example of training a simple network from the data.csv file is available [here](https://www.youtube.com/watch?v=I1-ug0xZipE).
 
 ## Features
 In the development of this program, one of the core principles that were adhered to was to maximize the flexibility of the application for the end user to ultimately provide them with a versatile tool. To achieve this objective, we implemented a variety of features to create a robust and adaptable platform that can cater to diverse user needs.
@@ -80,6 +80,27 @@ make
 ```
 ./ANN 100000 0.0001 0.1 2 64 32 18 2
 ```
+
+## Sample Input Files
+Within the repository, you'll find two CSV files: data.csv and data33.csv. These files are provided specifically for testing both the program and the neural network.
+
+| File Name | Number of Rows | Input Variables | Output Variables | Input Variables Type | Output Variables Type | File Size |
+|-----------|----------------|-----------------|------------------|----------------------|-----------------------|-----------|
+| [data.csv](https://github.com/andrewderango/Neural-Network-in-C/blob/main/data.csv)  | 48,120         | 2             | 2              | ```float```          | ```bool```            | 1.5 MB    |
+| [data33.csv](https://github.com/andrewderango/Neural-Network-in-C/blob/main/data33.csv)| 48,120         | 3             | 3              | ```float```          | ```bool```            | 2.2 MB    |
+
+To enhance the understanding of the datasets, the following plots have been generated:
+
+<p align="center">
+  <img src="https://github.com/andrewderango/Neural-Network-in-C/assets/93727693/e9fea56c-a2f5-4835-9c7f-1be9d0080df6" width="750">
+</p>
+<p align="center">
+  <img src="https://github.com/andrewderango/Neural-Network-in-C/assets/93727693/40b69df9-1d6c-46a4-b661-5a2b9da1a63f" width="750">
+</p>
+
+For reference, the ANN can achieve up to a 90% accuracy on these datasets!
+
+This program is designed to seamlessly handle three input file extensions: .csv, .tsv, and .txt. It's important to emphasize that the .txt file is expected to adhere to the same formatting as the .tsv file for accurate parsing.
 
 ## Program Structure
 
