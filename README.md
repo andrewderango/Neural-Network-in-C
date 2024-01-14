@@ -85,7 +85,7 @@ make
 Within the repository, you'll find two CSV files: data.csv and data33.csv. These files are provided specifically for testing both the program and the neural network.
 
 | File Name | Number of Rows | Input Variables | Output Variables | Input Variables Type | Output Variables Type | File Size |
-|-----------|----------------|-----------------|------------------|----------------------|-----------------------|-----------|
+|:---------:|:--------------:|:---------------:|:----------------:|:--------------------:|:---------------------:|:---------:|
 | [data.csv](https://github.com/andrewderango/Neural-Network-in-C/blob/main/data.csv)  | 48,120         | 2             | 2              | ```float```          | ```bool```            | 1.5 MB    |
 | [data33.csv](https://github.com/andrewderango/Neural-Network-in-C/blob/main/data33.csv)| 48,120         | 3             | 3              | ```float```          | ```bool```            | 2.2 MB    |
 
