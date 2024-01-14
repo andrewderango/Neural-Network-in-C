@@ -50,10 +50,10 @@ InputData ReadFile(int num_cols) {
             continue;
         }
 
-        // Check if the file name ends with .txt or .tsv
+        // Check if the file name ends with .txt, .tsv, or .csv
         char *extension = strrchr(filename, '.');
-        if (extension == NULL || (strcmp(extension, ".txt") != 0 && strcmp(extension, ".tsv") != 0)) {
-            printf("Invalid file name. Only .txt and .tsv extensions are valid.\n");
+        if (extension == NULL || (strcmp(extension, ".txt") != 0 && strcmp(extension, ".tsv") != 0 && strcmp(extension, ".csv") != 0)) {
+            printf("Invalid file name. The following are the only valid extensions: .txt, .tsv, and .csv.\n");
             continue;
         }
 
@@ -68,11 +68,21 @@ InputData ReadFile(int num_cols) {
 
     // Count the number of rows in the file
     int num_rows = 0;
-    double value_holder; // Garbage variable that holds the value read from the file
-    while (fscanf(file, "%lf", &value_holder) == 1) {
-        char next_character = fgetc(file);
-        if (next_character == '\n' || next_character == EOF) {
+    char *extension = strrchr(filename, '.');
+    if (strcmp(extension, ".csv") == 0) {
+        char *line = NULL;
+        size_t len = 0;
+        while (getline(&line, &len, file) != -1) {
             num_rows++;
+        }
+        free(line);
+    } else {
+        double value_holder; // Garbage variable that holds the value read from the file
+        while (fscanf(file, "%lf", &value_holder) == 1) {
+            char next_character = fgetc(file);
+            if (next_character == '\n' || next_character == EOF) {
+                num_rows++;
+            }
         }
     }
 
@@ -85,12 +95,32 @@ InputData ReadFile(int num_cols) {
     // Read the file again from beginning
     fseek(file, 0, SEEK_SET);
 
-    // Transcribe the data from the file into the data array
-    for (int row = 0; row < num_rows; row++) {
-        for (int col = 0; col < num_cols; col++) {
-            if (fscanf(file, "%lf", &data[row][col]) != 1) {
-                fprintf(stderr, "Error reading input from file.\n");
-                exit(1);
+    if (strcmp(extension, ".csv") == 0) {
+        char *line = NULL;
+        size_t len = 0;
+        char *token;
+        for (int row = 0; row < num_rows; row++) {
+            if (getline(&line, &len, file) != -1) {
+                token = strtok(line, ","); // Tokenize the line with comma as delimiter
+                for (int col = 0; col < num_cols; col++) {
+                    if (token != NULL) {
+                        data[row][col] = atof(token); // Convert string to double
+                        token = strtok(NULL, ","); // Get the next token
+                    } else {
+                        fprintf(stderr, "Error reading input from file. Line %d has fewer columns than expected.\n", row + 1);
+                        exit(1);
+                    }
+                }
+            }
+        }
+        free(line);
+    } else {
+        for (int row = 0; row < num_rows; row++) {
+            for (int col = 0; col < num_cols; col++) {
+                if (fscanf(file, "%lf", &data[row][col]) != 1) {
+                    fprintf(stderr, "Error reading input from file.\n");
+                    exit(1);
+                }
             }
         }
     }
