@@ -50,10 +50,10 @@ InputData ReadFile(int num_cols) {
             continue;
         }
 
-        // Check if the file name ends with .txt
+        // Check if the file name ends with .txt or .tsv
         char *extension = strrchr(filename, '.');
-        if (extension == NULL || strcmp(extension, ".txt") != 0) {
-            printf("Invalid file name. Please enter a file name ending with .txt.\n");
+        if (extension == NULL || (strcmp(extension, ".txt") != 0 && strcmp(extension, ".tsv") != 0)) {
+            printf("Invalid file name. Only .txt and .tsv extensions are valid.\n");
             continue;
         }
 
