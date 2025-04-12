@@ -1,7 +1,7 @@
-# Developing an Artificial Neural Network in C
+# Developing an MLP Neural Network in C
 
 ## Project Overview
-This project focuses on the development of an Artificial Neural Network (ANN) entirely from scratch using the C programming language. At its core, the program is designed to orchestrate the creation, training, and deployment of a feedforward neural network (FNN). FNNs, a foundational architecture in the realm of ANNs, are characterized by their ability to learn complex relationships for predicting outcomes based on independent variables using a network of interconnected nodes. This project aims to establish a robust framework for constructing and training ANNs tailored to user-provided datasets.
+This project focuses on the development of an Artificial Neural Network (ANN) entirely from scratch using the C programming language. At its core, the program is designed to orchestrate the creation, training, and deployment of a multilayer perceptron (MLP) neural network. MLP neural networks, a foundational architecture in the realm of ANNs, are characterized by their ability to learn complex relationships for predicting outcomes based on independent variables using a network of interconnected nodes. This project aims to establish a robust framework for constructing and training ANNs tailored to user-provided datasets.
 
 ## Demo
 A brief demo video that covers an example of training a simple network from the data.csv file is available [here](https://www.youtube.com/watch?v=I1-ug0xZipE).
@@ -10,6 +10,13 @@ A brief demo video that covers an example of training a simple network from the 
 In the development of this program, one of the core principles that were adhered to was to maximize the flexibility of the application for the end user to ultimately provide them with a versatile tool. To achieve this objective, we implemented a variety of features to create a robust and adaptable platform that can cater to diverse user needs.
 
 1. **Customizable Architecture**: Upon execution, users can specify the number of features, labels, hidden layers, and neurons within these hidden layers. They can also adjust the learning rate, epochs, and activation function to ensure that users can leverage the optimal network architecture for their dataset.
+
+   - **Activation Function Selection**: Users can select the activation function by specifying a number in the command-line arguments:
+     - `0`: Sigmoid
+     - `1`: ReLU
+     - `2`: LeakyReLU
+     - `3`: Tanh
+
 2. **Integrated Test/Train Split Mechanism**: Users can specify how much of the input data they would like to use for training the model, and how much of the data should be allocated to validation. This helps notify users if the model that they are training is overfitting by showing how well it performs on new data.
 3. **Real-time Performance Metrics**: During training, the program will update the user on the performance of the model on both the training and validation datasets. Not only does this give the user an idea of the effectiveness of the model, but can show the user how many epochs are sufficient for the training of the model on their dataset.
 4. **Regression and Classification Support**: The artificial neural network can make predictions for both regression and classification problems.
@@ -74,11 +81,11 @@ make
 ```
 9. Execute the program using the following terminal command format:
 ```
-./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>
+./ANN <epochs> <learning_rate> <train_split> <activation_function_number> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>
 ```
- For example, to train an FNN using 100,000 epochs, 0.0001 learning rate, 10% of the data used for training, and architecture of 2-64-32-18-2, then run the following command:
+For example, to train an MLP neural network using 100,000 epochs, 0.0001 learning rate, 10% of the data used for training, and architecture of 2-64-32-18-2 with Leaky ReLU activation, then run the following command:
 ```
-./ANN 100000 0.0001 0.1 2 64 32 18 2
+./ANN 100000 0.0001 0.1 2 2 64 32 18 2
 ```
 
 ## Sample Input Files
@@ -101,23 +108,3 @@ To enhance the understanding of the datasets, the following plots have been gene
 For reference, the ANN can achieve up to a 90% accuracy on these datasets!
 
 This program is designed to seamlessly handle three input file extensions: .csv, .tsv, and .txt. It's important to emphasize that the .txt file is expected to adhere to the same formatting as the .tsv file for accurate parsing.
-
-## Program Structure
-
-```main``` is where the user’s execution command is extracted, and where all functions are called. It starts by ensuring that the user’s execution command follows proper formatting, then assigns their inputs to variables to be passed into future function calls. It prints the network’s architecture, and then asks for the file name of the input data. Then, it calls ```OrganizeData``` and ```Evaluation```.
-
-```ReadFile``` reads the file specified by the user. It iterates through the file twice. It first counts the number of rows and then uses this value to dynamically allocate memory for ```**data```, a 2D array that stores the data from the input file. It then reads through the file again and fills the array with the file data now that the array is declared. The function returns both this ```**data``` array and the number of rows in the file.
-
-```OrganizeData``` first shuffles every data point that is passed in via ```**data```. It then computes how many training and validation data points there should be, based on the train/validation split determined by the user upon execution. It then assigns the proper number of data points to the training and validation datasets.
-
-```InitializeArrays``` simply iterates through the weights, biases, and activations arrays and allocates the necessary memory for each element within each array. For the weights and biases, it assigns a different random double between (```-initial_range```, ```initial_range```) to each of them.
-
-```CalculateMetrics``` computes the metrics that are printed every hundredth epoch during the model’s training so that the user can get a gauge of the ANN’s performance throughout training. This includes a variation of MSE and accuracy. To do this, it creates alternative activation 3D arrays and runs ```ForwardPass``` for both the training and validation datasets to assign activations, and further, predictions for the model on each dataset. For more information, read the dynamic memory allocation section which delves deeper into the memory handling and logistics of this function.
-
-```ForwardPass``` assigns values for each training example to each neuron in each layer via the ```***a``` array. The three dimensions arise from ```a[layer][neuron][training_example]```. The activations for the first layer are simply the inputs from the data file. The activations of each of the following layers must be computed sequentially via a linear combination of the previous layer’s activation and the weights, bias, and activation function associated with the neuron in question, hence the function name “ForwardPass” and the type of model “feedforward neural network”.
-
-The ```BackwardPass``` function deals with the backpropagation algorithm responsible for optimizing the weights and biases selected by the program to best predict the label values. The weights and biases are updated in each epoch, a change dependent on their influences on the ultimate predictions, and by extension, the cost function. It starts by allocating memory in all three dimensions for ```PL```, which stores the partial derivative of the cost function with respect to the activations of the neurons. This process begins by taking the derivative of the cost function with respect to the activations of the neurons in the output layer, which is simply the derivative of the activation function. The activation function is the sigmoid function and was computed manually to be in the form seen in the double ```for``` loop. Then, the function enters a loop for each hidden layer and computes ```PL``` for each iteration. Since ```PL``` is a partial derivative, we can split it into the intermediate partial derivatives via the chain rule, and calculate it as the derivative of the cost function, computed manually, multiplied by the weighted sum of the gradients of the neurons in the following layer of the network. Hence the function name “BackwardPass” and the name of the algorithm “backpropagation”. Using the gradients computed in the previous loop and the learning rate specified by the user, we update the weight of each synapse and the bias of each neuron.
-
-The ```Evaluation``` function calls ```InitializeArrays``` then loops through the epochs of training, calling ```ForwardPass``` and ```BackwardPass``` each iteration. If the iteration is a hundredth epoch, then ```CalculateMetrics``` is called to show the performance. Following training, ```DownloadANN``` is called.
-
-```DownloadANN``` is the function responsible for downloading or saving the network that was just trained. It first asks the user if they would like to save the network, then creates a directory called Downloaded Data to their current directory if they say yes and the directory does not already exist. It creates the file ```ANN_data.txt``` in this folder and then writes the model’s architecture, performance metrics, and weights and biases into it.

@@ -30,21 +30,22 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
                       double *accuracy_train, double *accuracy_val, double *cost_train, double *cost_val, double *log_loss_train, double *log_loss_val, double *r2_train, double *r2_val);
 
 void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
-                 double **X_train, double ***W, double **b, double ***a);
+                 double **X_train, double ***W, double **b, double ***a, const char *activation_function);
 
 void BackwardPass(double learning_rate, int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
                   double **X_train, double **Y_train, double ***W, double **b, double ***a);
 
 void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, char *filename,
                 int epochs, double learning_rate, double initial_range, int num_train, int num_val, double train_split,
-                double **X_train, double **Y_train, double **X_val, double **Y_val);
+                double **X_train, double **Y_train, double **X_val, double **Y_val, const char *activation_function);
 
 void ROC(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
-         double **Y_train, double **X_val, double **Y_val, double ***W, double **b, double ***a);
+         double **Y_train, double **X_val, double **Y_val, double ***W, double **b, double ***a, const char *activation_function);
 
 void DownloadANN(int epochs, double learning_rate, double initial_range, char *filename, double train_split, int num_train,
                   int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
-                  double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b);
+                  double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b,
+                  const char *activation_function);
 
 void MakePredictions(double ***W, double **b, int num_inputs, int num_hidden_layers, int *num_neurons, int num_outputs);
 

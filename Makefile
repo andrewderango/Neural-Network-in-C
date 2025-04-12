@@ -22,8 +22,8 @@
 ######## MacOS Makefile #########
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g -O3 -I/opt/homebrew/Cellar/libsodium/1.0.19/include
-LDFLAGS = -L/opt/homebrew/Cellar/libsodium/1.0.19/lib -lm -lsodium
+CFLAGS = -Wall -Wextra -g -O3 -I/opt/homebrew/opt/libsodium/include
+LDFLAGS = -L/opt/homebrew/opt/libsodium/lib -lm -lsodium
 TARGET = ANN
 SRC = main.c mymodel.c
 OBJ = $(SRC:.c=.o)
