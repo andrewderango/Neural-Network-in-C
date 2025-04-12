@@ -7,9 +7,18 @@
 #include <sys/stat.h>
 #include "mymodel.h"
 
-// Simple Sigmoid function for activation function
+// Activation functions
 double Sigmoid(double x) {
     return 1.0 / (1.0 + exp(-x));
+}
+double ReLU(double x) {
+    return fmax(0, x);
+}
+double LeakyReLU(double x) {
+    return (x > 0) ? x : 0.01 * x;
+}
+double Tanh(double x) {
+    return tanh(x);
 }
 
 // Generate a random double between min and max
@@ -238,7 +247,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
     
     // Run the model on the training dataset
     ForwardPass(num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                X_train, W, b, a_train);
+                X_train, W, b, a_train, "Sigmoid");
 
     // Allocate memory for output neurons
     double **output_neurons_train = malloc(num_train * sizeof(double *));
@@ -321,7 +330,7 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
 
     // Run the model on the validation dataset
     ForwardPass(num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                X_val, W, b, a_val);
+                X_val, W, b, a_val, "Sigmoid");
 
     // Allocate memory for output neurons
     double **output_neurons_val = malloc(num_val * sizeof(double *));
@@ -427,21 +436,32 @@ void CalculateMetrics(int num_train, int num_val, int num_inputs, int num_output
 
 // Run the model on the training dataset and update the weights and biases
 void ForwardPass(int num_train, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
-                 double **X_train, double ***W, double **b, double ***a)
-{
-    // Calculate the activations for each neuron in each layer
+                 double **X_train, double ***W, double **b, double ***a, const char *activation_function) {
     for (int layer = 0; layer < num_hidden_layers + 1; layer++) {
-        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer]; // Neurons in the last layer is just the number of labels
-        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1]; // Neurons in the first layer is just the number of features
-        
-        // Loop throuh each neuron in layer and calculate its activation
+        int num_neurons_current_layer = (layer == num_hidden_layers) ? num_outputs : num_neurons[layer];
+        int num_neurons_previous_layer = (layer == 0) ? num_inputs : num_neurons[layer - 1];
+
         for (int neuron = 0; neuron < num_neurons_current_layer; neuron++) {
             for (int training_example = 0; training_example < num_train; training_example++) {
                 double sum = 0;
                 for (int prev_neuron = 0; prev_neuron < num_neurons_previous_layer; prev_neuron++) {
                     sum += W[layer][neuron][prev_neuron] * ((layer == 0) ? X_train[training_example][prev_neuron] : a[layer - 1][prev_neuron][training_example]);
                 }
-                a[layer][neuron][training_example] = (layer == num_hidden_layers) ? Sigmoid(sum + b[layer][neuron]) : tanh(sum + b[layer][neuron]); // Activation function
+
+                double z = sum + b[layer][neuron];
+                if (layer == num_hidden_layers) {
+                    a[layer][neuron][training_example] = Sigmoid(z);
+                } else {
+                    if (strcmp(activation_function, "ReLU") == 0) {
+                        a[layer][neuron][training_example] = ReLU(z);
+                    } else if (strcmp(activation_function, "LeakyReLU") == 0) {
+                        a[layer][neuron][training_example] = LeakyReLU(z);
+                    } else if (strcmp(activation_function, "Tanh") == 0) {
+                        a[layer][neuron][training_example] = Tanh(z);
+                    } else {
+                        a[layer][neuron][training_example] = tanh(z); // Default to Tanh
+                    }
+                }
             }
         }
     }
@@ -539,7 +559,7 @@ void BackwardPass(double learning_rate, int num_train, int num_inputs, int num_o
 // Train model and evaluate performance
 void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, char *filename,
                 int epochs, double learning_rate, double initial_range, int num_train, int num_val, double train_split,
-                double **X_train, double **Y_train, double **X_val, double **Y_val)
+                double **X_train, double **Y_train, double **X_val, double **Y_val, const char *activation_function)
 {
     double ***W = malloc((num_hidden_layers + 1) * sizeof(double **)); // Weights
     double **b = malloc((num_hidden_layers + 1) * sizeof(double *)); // Biases
@@ -561,7 +581,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
     for (int ep = 1; ep <= epochs; ep++) {
 
         ForwardPass(num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-                    X_train, W, b, a);
+                    X_train, W, b, a, activation_function);
         
         BackwardPass(learning_rate, num_train, num_inputs, num_outputs, num_hidden_layers, num_neurons,
                     X_train, Y_train, W, b, a);
@@ -593,12 +613,12 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
 
     // Generate coordinates in CSV for ROC curve
     ROC(num_train, num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons,
-        Y_train, X_val, Y_val, W, b, a);
+        Y_train, X_val, Y_val, W, b, a, activation_function);
 
     // Ask user if they want to download ANN
     DownloadANN(epochs, learning_rate, initial_range, filename, train_split, num_train, num_val, 
                  num_inputs, num_outputs, num_hidden_layers, num_neurons, 
-                 X_train, Y_train, X_val, Y_val, W, b);
+                 X_train, Y_train, X_val, Y_val, W, b, activation_function);
 
     // Ask user if they want to make predictions on a new input data file
     MakePredictions(W, b, num_inputs, num_hidden_layers, num_neurons, num_outputs);
@@ -624,7 +644,7 @@ void Evaluation(int num_inputs, int num_outputs, int num_hidden_layers, int *num
 
 // Calculate the true positive rate and false positive rate for the ROC curve
 void ROC(int num_train, int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons,
-         double **Y_train, double **X_val, double **Y_val, double ***W, double **b, double ***a)
+         double **Y_train, double **X_val, double **Y_val, double ***W, double **b, double ***a, const char *activation_function)
 {
     // Create folder if it doesn't already exist
     mkdir("Data Visualizations", 0777);
@@ -685,7 +705,7 @@ void ROC(int num_train, int num_val, int num_inputs, int num_outputs, int num_hi
             a_val[layer][neuron] = malloc(num_val * sizeof(double));
         }
     }
-    ForwardPass(num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons, X_val, W, b, a_val);
+    ForwardPass(num_val, num_inputs, num_outputs, num_hidden_layers, num_neurons, X_val, W, b, a_val, activation_function);
 
     // Open file inside the folder to write data into
     FILE *file_val = fopen("Data Visualizations/ROC_validation.csv", "w");
@@ -746,7 +766,8 @@ void ROC(int num_train, int num_val, int num_inputs, int num_outputs, int num_hi
 // Download the ANN to a txt file if the user wants
 void DownloadANN(int epochs, double learning_rate, double initial_range, char *filename, double train_split, int num_train,
                   int num_val, int num_inputs, int num_outputs, int num_hidden_layers, int *num_neurons, 
-                  double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b) 
+                  double **X_train, double **Y_train, double **X_val, double **Y_val, double ***W, double **b,
+                  const char *activation_function) 
 {
     char userResponse[100];
     int valid_response = 0;
@@ -784,7 +805,7 @@ void DownloadANN(int epochs, double learning_rate, double initial_range, char *f
         fprintf(file, "Learning Rate: %f\n", learning_rate);
         fprintf(file, "Weight and Bias Initialization Range: (%f, %f)\n", -initial_range, initial_range);
         fprintf(file, "Dataset: %s\n", filename);
-        fprintf(file, "Activation function: Sigmoid\n");
+        fprintf(file, "Activation Function: %s\n", activation_function);
         fprintf(file, "Train Split (Proportion): %f\n", train_split);
         fprintf(file, "Training Dataset Samples: %d\n", num_train);
         fprintf(file, "Validation Dataset Samples: %d\n", num_val);
@@ -953,7 +974,7 @@ void MakePredictions(double ***W, double **b, int num_inputs, int num_hidden_lay
         }
 
         // Make predictions based on these inputs
-        ForwardPass(num_rows, num_inputs, num_outputs, num_hidden_layers, num_neurons, data, W, b, a);
+        ForwardPass(num_rows, num_inputs, num_outputs, num_hidden_layers, num_neurons, data, W, b, a, "Sigmoid");
         
         // Print the data array and make predictions
         for (int row = 0; row < num_rows; row++) {
