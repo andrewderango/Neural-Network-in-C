@@ -10,6 +10,13 @@ A brief demo video that covers an example of training a simple network from the 
 In the development of this program, one of the core principles that were adhered to was to maximize the flexibility of the application for the end user to ultimately provide them with a versatile tool. To achieve this objective, we implemented a variety of features to create a robust and adaptable platform that can cater to diverse user needs.
 
 1. **Customizable Architecture**: Upon execution, users can specify the number of features, labels, hidden layers, and neurons within these hidden layers. They can also adjust the learning rate, epochs, and activation function to ensure that users can leverage the optimal network architecture for their dataset.
+
+   - **Activation Function Selection**: Users can select the activation function by specifying a number in the command-line arguments:
+     - `0`: Sigmoid
+     - `1`: ReLU
+     - `2`: LeakyReLU
+     - `3`: Tanh
+
 2. **Integrated Test/Train Split Mechanism**: Users can specify how much of the input data they would like to use for training the model, and how much of the data should be allocated to validation. This helps notify users if the model that they are training is overfitting by showing how well it performs on new data.
 3. **Real-time Performance Metrics**: During training, the program will update the user on the performance of the model on both the training and validation datasets. Not only does this give the user an idea of the effectiveness of the model, but can show the user how many epochs are sufficient for the training of the model on their dataset.
 4. **Regression and Classification Support**: The artificial neural network can make predictions for both regression and classification problems.
@@ -74,11 +81,11 @@ make
 ```
 9. Execute the program using the following terminal command format:
 ```
-./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>
+./ANN <epochs> <learning_rate> <train_split> <activation_function_number> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>
 ```
- For example, to train an MLP neural network using 100,000 epochs, 0.0001 learning rate, 10% of the data used for training, and architecture of 2-64-32-18-2, then run the following command:
+For example, to train an MLP neural network using 100,000 epochs, 0.0001 learning rate, 10% of the data used for training, and architecture of 2-64-32-18-2 with Leaky ReLU activation, then run the following command:
 ```
-./ANN 100000 0.0001 0.1 2 64 32 18 2
+./ANN 100000 0.0001 0.1 2 2 64 32 18 2
 ```
 
 ## Sample Input Files
