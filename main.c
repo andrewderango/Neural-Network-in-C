@@ -9,10 +9,10 @@
 #define INITIAL_RANGE 0.2 // Initial range (positive and negative) for random weights and biases
 
 int main(int argc, char *argv[]) {
-    // User must enter at least 7 arguments in the command line to define network architecture
-    if (argc < 7) {
+    // User must enter at least 8 arguments in the command line to define network architecture
+    if (argc < 8) {
         printf("Sorry, I could not understand your input. Please refer to the following execution format:\n");
-        printf("./ANN <epochs> <learning_rate> <train_split> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>\n");
+        printf("./ANN <epochs> <learning_rate> <train_split> <activation_function_number> <num_inputs> <num_neurons_layer2> ... <num_neurons_layerN> <num_outputs>\n");
         return 1;
     }
 
@@ -37,19 +37,36 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // Extract the activation function number
+    int activation_function_number = atoi(argv[4]);
+    const char *activation_function;
+    if (activation_function_number == 0) {
+        activation_function = "Sigmoid";
+    } else if (activation_function_number == 1) {
+        activation_function = "ReLU";
+    } else if (activation_function_number == 2) {
+        activation_function = "LeakyReLU";
+    } else if (activation_function_number == 3) {
+        activation_function = "Tanh";
+    } else {
+        printf("Error: Invalid activation function number. Please specify one of the following:\n");
+        printf("0: Sigmoid\n1: ReLU\n2: LeakyReLU\n3: Tanh\n");
+        return 1;
+    }
+
     // Extract the number of variables that are used as inputs to the model (independent variables)
-    int num_inputs = atoi(argv[4]);
+    int num_inputs = atoi(argv[5]);
     if (num_inputs < 1) {
         printf("Error: The number of features must be at least 1.\n");
         return 1;
     }
 
     // Extract the number of neurons in each hidden layer, in order
-    int num_hidden_layers = argc - 6;
+    int num_hidden_layers = argc - 7;
     int *num_neurons = malloc(num_hidden_layers * sizeof(int));
     // Iterate through each hidden layer and extract the number of neurons in each
     for (int i = 0; i < num_hidden_layers; i++) {
-        num_neurons[i] = atoi(argv[i + 5]);
+        num_neurons[i] = atoi(argv[i + 6]);
         if (num_neurons[i] < 1) {
             printf("Error: The quantity of neurons in hidden layer %d must be at least 1.\n", i + 1);
             return 1;
@@ -68,6 +85,7 @@ int main(int argc, char *argv[]) {
     printf("Epochs: %d\n", epochs);
     printf("Learning Rate: %f\n", learning_rate);
     printf("Train Split (Proportion): %f\n", train_split);
+    printf("Activation Function: %s\n", activation_function);
     printf("Input Neurons: %d\n", num_inputs);
     printf("Output Neurons: %d\n", num_outputs);
     printf("Hidden Layers: %d\n", num_hidden_layers);
@@ -112,7 +130,7 @@ int main(int argc, char *argv[]) {
     // Train the model and evaluate performance
     Evaluation(num_inputs, num_outputs, num_hidden_layers, num_neurons, filename,
                epochs, learning_rate, init_range, num_train, num_val, train_split,
-               X_train, Y_train, X_val, Y_val);
+               X_train, Y_train, X_val, Y_val, activation_function);
 
     // Free all dynamically allocated memory
     free(num_neurons);
